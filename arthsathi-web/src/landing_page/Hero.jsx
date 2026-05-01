@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 function Hero() {
   return (
@@ -6,7 +7,7 @@ function Hero() {
       <h1>Run your business with clarity.</h1>
       <p className="subtitle">Track inventory, record sales, and know your exact profit — without confusion.</p>
       <p className="extra">Built for real shopkeepers. Fast. Offline. Reliable.</p>
-      <a href="#pricing" className="btn">Get Started</a>
+      <Link to="/login" className="btn">Get Started</Link>
       <p className="note">Plans from ₹399/month · Cancel anytime · Works fully offline.</p>
     </section>
   );

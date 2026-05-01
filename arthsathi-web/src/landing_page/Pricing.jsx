@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 function Pricing() {
   return (
@@ -19,7 +20,7 @@ function Pricing() {
             <li>Basic Insights</li>
             <li>Offline Access</li>
           </ul>
-          <a href="#" className="btn btn-secondary">Get Started</a>
+          <Link to="/login" className="btn btn-secondary">Get Started</Link>
         </div>
 
         <div className="card pricing-card highlighted">
@@ -34,7 +35,7 @@ function Pricing() {
             <li>Profit Intelligence</li>
             <li>Customer Insights</li>
           </ul>
-          <a href="#" className="btn">Upgrade (Preview)</a>
+          <Link to="/login" className="btn">Upgrade (Preview)</Link>
         </div>
       </div>
     </section>
