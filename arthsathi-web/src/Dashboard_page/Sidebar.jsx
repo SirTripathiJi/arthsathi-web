@@ -2,10 +2,13 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function Sidebar({ activeTab, setActiveTab }) {
-  const tabs = ['Overview', 'Inventory', 'Customers', 'Billing', 'Transactions', 'Insights', 'Settings'];
+  const tabs = ['Overview', 'Inventory', 'Billing', 'Transactions', 'Insights', 'Settings'];
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem("authUser"));
+
   const handleSignOut = () => {
+    localStorage.removeItem("authUser");
     navigate('/login');
   };
 
@@ -29,8 +32,8 @@ function Sidebar({ activeTab, setActiveTab }) {
       </nav>
       <div className="sidebar-bottom">
         <div className="shop-info">
-          <strong>ArthSaathi</strong>
-          <p>Akshat Tripathi</p>
+          <h3>{user?.shopName || "My Shop"}</h3>
+          <p>{user?.username || "User"}</p>
         </div>
         <button className="btn sidebar-btn" onClick={handleSignOut}>Sign Out</button>
       </div>

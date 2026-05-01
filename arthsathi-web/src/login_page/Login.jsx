@@ -5,11 +5,44 @@ import './Login.css';
 
 function Login() {
   const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    username: '',
+    shopName: '',
+    email: '',
+    password: ''
+  });
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    navigate('/dashboard');
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+
+    if (isLogin) {
+      // Login Logic
+      const user = users.find(u => u.email === formData.email && u.password === formData.password);
+      if (user) {
+        localStorage.setItem("authUser", JSON.stringify(user));
+        navigate('/dashboard');
+      } else {
+        alert("Invalid credentials");
+      }
+    } else {
+      // Signup Logic
+      const newUser = {
+        username: formData.username,
+        shopName: formData.shopName,
+        email: formData.email,
+        password: formData.password
+      };
+      users.push(newUser);
+      localStorage.setItem("users", JSON.stringify(users));
+      localStorage.setItem("authUser", JSON.stringify(newUser));
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -21,12 +54,14 @@ function Login() {
         
         <div className="auth-tabs">
           <button 
+            type="button"
             className={`tab-btn ${isLogin ? 'active' : ''}`} 
             onClick={() => setIsLogin(true)}
           >
             Login
           </button>
           <button 
+            type="button"
             className={`tab-btn ${!isLogin ? 'active' : ''}`} 
             onClick={() => setIsLogin(false)}
           >
@@ -38,18 +73,46 @@ function Login() {
           {!isLogin && (
             <>
               <div className="input-group">
-                <input type="text" placeholder="Full Name" required />
+                <input 
+                  type="text" 
+                  name="username" 
+                  placeholder="Full Name" 
+                  value={formData.username} 
+                  onChange={handleChange} 
+                  required 
+                />
               </div>
               <div className="input-group">
-                <input type="text" placeholder="Store Name" required />
+                <input 
+                  type="text" 
+                  name="shopName" 
+                  placeholder="Store Name" 
+                  value={formData.shopName} 
+                  onChange={handleChange} 
+                  required 
+                />
               </div>
             </>
           )}
           <div className="input-group">
-            <input type="email" placeholder="Email Address" required />
+            <input 
+              type="email" 
+              name="email" 
+              placeholder="Email Address" 
+              value={formData.email} 
+              onChange={handleChange} 
+              required 
+            />
           </div>
           <div className="input-group">
-            <input type="password" placeholder="Password" required />
+            <input 
+              type="password" 
+              name="password" 
+              placeholder="Password" 
+              value={formData.password} 
+              onChange={handleChange} 
+              required 
+            />
           </div>
           <button type="submit" className="auth-btn">
             {isLogin ? "Login" : "Create Account"}

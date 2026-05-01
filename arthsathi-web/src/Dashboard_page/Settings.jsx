@@ -1,12 +1,11 @@
 import React from 'react';
 import Card from './Card';
 
-function Settings({ setInventory, setCustomers, setSales, setActiveTab }) {
+function Settings({ setInventory, setSales, setActiveTab }) {
   const handleReset = () => {
     if (window.confirm("Are you sure you want to delete all data? This cannot be undone.")) {
       localStorage.clear();
       setInventory([]);
-      setCustomers([]);
       setSales([]);
       setActiveTab('Overview');
     }
@@ -16,7 +15,7 @@ function Settings({ setInventory, setCustomers, setSales, setActiveTab }) {
     <div className="dash-section">
       <Card accentColor="#111" className="mb-24">
         <h3 style={{ marginBottom: '16px' }}>Danger Zone</h3>
-        <p style={{ marginBottom: '16px', color: '#555' }}>Wipe all inventory, sales, and customer data from local storage.</p>
+        <p style={{ marginBottom: '16px', color: '#555' }}>Wipe all inventory and sales data from local storage.</p>
         <button className="btn" style={{ backgroundColor: '#ef4444', borderColor: '#ef4444', color: '#fff' }} onClick={handleReset}>Reset All Data</button>
       </Card>
 

@@ -15,6 +15,7 @@
   border-right: var(--border-width) solid var(--border-color);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   padding: 24px;
 }
 

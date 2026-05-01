@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Overview from './Overview';
 import Inventory from './Inventory';
-import Customers from './Customers';
 import Billing from './Billing';
 import Transactions from './Transactions';
 import Insights from './Insights';
@@ -11,16 +11,25 @@ import Settings from './Settings';
 import './Dashboard.css';
 
 function Dashboard() {
-  const validTabs = ['Overview', 'Inventory', 'Customers', 'Billing', 'Transactions', 'Insights', 'Settings'];
+  const navigate = useNavigate();
+  const [isAuth, setIsAuth] = useState(false);
+
+  useEffect(() => {
+    const user = localStorage.getItem("authUser");
+    if (!user) {
+      navigate('/login');
+    } else {
+      setIsAuth(true);
+    }
+  }, [navigate]);
+
+  const validTabs = ['Overview', 'Inventory', 'Billing', 'Transactions', 'Insights', 'Settings'];
   const [activeTab, setActiveTab] = useState(() => {
     const saved = localStorage.getItem('arth_tab');
     return validTabs.includes(saved) ? saved : 'Overview';
   });
   const [inventory, setInventory] = useState(() => {
     try { const val = JSON.parse(localStorage.getItem('arth_inv')); return Array.isArray(val) ? val : []; } catch { return []; }
-  });
-  const [customers, setCustomers] = useState(() => {
-    try { const val = JSON.parse(localStorage.getItem('arth_cust')); return Array.isArray(val) ? val : []; } catch { return []; }
   });
   const [sales, setSales] = useState(() => {
     try { const val = JSON.parse(localStorage.getItem('arth_sales')); return Array.isArray(val) ? val : []; } catch { return []; }
@@ -29,9 +38,10 @@ function Dashboard() {
   useEffect(() => {
     localStorage.setItem('arth_tab', activeTab);
     localStorage.setItem('arth_inv', JSON.stringify(inventory));
-    localStorage.setItem('arth_cust', JSON.stringify(customers));
     localStorage.setItem('arth_sales', JSON.stringify(sales));
-  }, [activeTab, inventory, customers, sales]);
+  }, [activeTab, inventory, sales]);
+
+  if (!isAuth) return null;
 
   return (
     <div className="dashboard-layout">
@@ -40,11 +50,10 @@ function Dashboard() {
         <Topbar activeTab={activeTab} />
         {activeTab === 'Overview' && <Overview inventory={inventory} sales={sales} />}
         {activeTab === 'Inventory' && <Inventory inventory={inventory} setInventory={setInventory} />}
-        {activeTab === 'Customers' && <Customers customers={customers} setCustomers={setCustomers} />}
-        {activeTab === 'Billing' && <Billing inventory={inventory} setInventory={setInventory} sales={sales} setSales={setSales} customers={customers} setCustomers={setCustomers} />}
-        {activeTab === 'Transactions' && <Transactions sales={sales} />}
+        {activeTab === 'Billing' && <Billing inventory={inventory} setInventory={setInventory} sales={sales} setSales={setSales} />}
+        {activeTab === 'Transactions' && <Transactions sales={sales} setSales={setSales} />}
         {activeTab === 'Insights' && <Insights sales={sales} />}
-        {activeTab === 'Settings' && <Settings setInventory={setInventory} setCustomers={setCustomers} setSales={setSales} setActiveTab={setActiveTab} />}
+        {activeTab === 'Settings' && <Settings setInventory={setInventory} setSales={setSales} setActiveTab={setActiveTab} />}
       </main>
     </div>
   );

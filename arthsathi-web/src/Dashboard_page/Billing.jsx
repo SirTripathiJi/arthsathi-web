@@ -1,16 +1,11 @@
 import React, { useState } from 'react';
 import Card from './Card';
 
-function Billing({ inventory, setInventory, sales, setSales, customers, setCustomers }) {
+function Billing({ inventory, setInventory, sales, setSales }) {
   const [cart, setCart] = useState([]);
   const [selectedItem, setSelectedItem] = useState('');
   const [qty, setQty] = useState('');
   
-  const [isWalkIn, setIsWalkIn] = useState(true);
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState('');
-
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
   const [paymentMode, setPaymentMode] = useState('Cash');
@@ -18,23 +13,55 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
 
   const [previewBill, setPreviewBill] = useState(null);
 
+  const getStatus = (item) => {
+    const isLowStock = (item.qty || 0) <= 5;
+    let isExpired = false;
+    let isNearExpiry = false;
+
+    if (item.expiry) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expDate = new Date(item.expiry);
+      expDate.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) isExpired = true;
+      else if (diffDays <= 7) isNearExpiry = true;
+    }
+    return { isLowStock, isExpired, isNearExpiry };
+  };
+
   const handleAddToCart = (e) => {
     e.preventDefault();
     if (!selectedItem || !qty) return;
     
     const item = inventory.find(i => i.id.toString() === selectedItem);
     if (!item) return;
+
+    if (item.qty <= 0) return alert('Cannot sell: This product is out of stock!');
+    
+    const { isExpired, isNearExpiry } = getStatus(item);
+    if (isExpired) {
+      if (!window.confirm('WARNING: This product is EXPIRED. Do you still want to add it?')) return;
+    } else if (isNearExpiry) {
+      if (!window.confirm('Warning: This product is near expiry. Continue?')) return;
+    }
+
     const saleQty = Number(qty);
-    
     const existingCartItem = cart.find(c => c.id === item.id);
-    const totalQty = (existingCartItem ? existingCartItem.qty : 0) + saleQty;
+    const totalQtyInCart = (existingCartItem ? existingCartItem.qty : 0) + saleQty;
     
-    if (item.qty < totalQty) return alert('Not enough stock!');
+    if (item.qty < totalQtyInCart) return alert(`Not enough stock! Only ${item.qty} available.`);
 
     if (existingCartItem) {
-      setCart(cart.map(c => c.id === item.id ? { ...c, qty: totalQty } : c));
+      setCart(cart.map(c => c.id === item.id ? { ...c, qty: totalQtyInCart } : c));
     } else {
-      setCart([...cart, { id: item.id, name: item.name, price: item.sellPrice || item.price || 0, costPrice: item.costPrice || 0, qty: saleQty }]);
+      setCart([...cart, { 
+        id: item.id, 
+        name: item.name, 
+        price: item.sellPrice || 0, 
+        costPrice: item.costPrice || 0, 
+        qty: saleQty 
+      }]);
     }
     
     setSelectedItem('');
@@ -46,25 +73,16 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
   };
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const discountAmount = (subtotal * discount) / 100;
+  const discountAmount = (subtotal * (discount || 0)) / 100;
   const taxableAmount = subtotal - discountAmount;
-  const taxAmount = (taxableAmount * tax) / 100;
+  const taxAmount = (taxableAmount * (tax || 0)) / 100;
   const total = taxableAmount + taxAmount;
   const paid = amountPaid === '' ? total : Number(amountPaid);
-  const due = total - paid;
-  const status = due <= 0 ? 'Paid' : (paid > 0 ? 'Partial' : 'Unpaid');
+  const due = Math.max(0, total - paid);
+  const status = due === 0 ? 'Paid' : 'Due';
 
   const handleGenerateBill = () => {
     if (cart.length === 0) return alert('Cart is empty!');
-    let finalCustomerName = isWalkIn ? customerName || 'Walk-in Customer' : '';
-    let finalCustomerPhone = isWalkIn ? customerPhone : '';
-
-    if (!isWalkIn) {
-      const cust = customers.find(c => c.id.toString() === selectedCustomer);
-      if (!cust) return alert('Please select a customer.');
-      finalCustomerName = cust.name;
-      finalCustomerPhone = cust.phone;
-    }
 
     // Deduct stock
     const updatedInventory = [...inventory];
@@ -74,30 +92,17 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
     });
     setInventory(updatedInventory);
 
-    // Calculate profit
+    // Calculate total profit
     const totalCost = cart.reduce((sum, item) => sum + (item.costPrice * item.qty), 0);
-    const profit = total - totalCost; // Net profit after discount/tax
-    const date = new Date().toISOString();
+    const profit = total - totalCost;
 
-    // Handle Customer
-    const existingCustIndex = customers.findIndex(c => c.name.toLowerCase() === finalCustomerName.toLowerCase());
-    let updatedCustomers = [...customers];
-    if (existingCustIndex > -1) {
-      updatedCustomers[existingCustIndex].totalSpent = (updatedCustomers[existingCustIndex].totalSpent || 0) + total;
-      updatedCustomers[existingCustIndex].lastVisit = date;
-      if (finalCustomerPhone) updatedCustomers[existingCustIndex].phone = finalCustomerPhone;
-    } else if (finalCustomerName !== 'Walk-in Customer') {
-      updatedCustomers.push({ id: Date.now(), name: finalCustomerName, phone: finalCustomerPhone, lastVisit: date, totalSpent: total });
-    }
-    setCustomers(updatedCustomers);
+    const date = new Date().toISOString();
 
     // Add Sale
     const newSale = { 
       id: Date.now(), 
       items: cart.map(c => ({ name: c.name, qty: c.qty, price: c.price })), 
-      customer: finalCustomerName, 
-      subtotal, discount, tax, total, paid, due, status, paymentMode,
-      profit, date 
+      total, paid, due, status, paymentMode, profit, date 
     };
     setSales([...sales, newSale]);
 
@@ -116,9 +121,19 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
           <form className="dash-form" onSubmit={handleAddToCart}>
             <select className="dash-input" value={selectedItem} onChange={e => setSelectedItem(e.target.value)} required>
               <option value="">Select Product</option>
-              {inventory.map(item => (
-                <option key={item.id} value={item.id}>{item.name || 'Unnamed'} (₹{item.sellPrice || item.price || 0} - Stock: {item.qty || 0})</option>
-              ))}
+              {inventory.map(item => {
+                const { isLowStock, isExpired } = getStatus(item);
+                let label = item.name;
+                if (isExpired) label += ' (EXPIRED)';
+                else if (item.qty <= 0) label += ' (OUT OF STOCK)';
+                else if (isLowStock) label += ' (LOW STOCK)';
+                
+                return (
+                  <option key={item.id} value={item.id} disabled={item.qty <= 0}>
+                    {label} - ₹{item.sellPrice || 0}
+                  </option>
+                );
+              })}
             </select>
             <input className="dash-input" type="number" placeholder="Quantity" value={qty} onChange={e => setQty(e.target.value)} required />
             <button className="btn" type="submit">Add to Bill</button>
@@ -132,7 +147,6 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
                   <tr>
                     <th>Item</th>
                     <th>Qty</th>
-                    <th>Price</th>
                     <th>Total</th>
                     <th>Action</th>
                   </tr>
@@ -142,7 +156,6 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
                     <tr key={item.id}>
                       <td>{item.name}</td>
                       <td>{item.qty}</td>
-                      <td>₹{item.price}</td>
                       <td>₹{item.price * item.qty}</td>
                       <td><button type="button" className="text-btn danger" onClick={() => handleRemoveFromCart(item.id)}>Remove</button></td>
                     </tr>
@@ -156,28 +169,9 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
         <Card accentColor="#38bdf8">
           <h3 style={{ marginBottom: '16px' }}>Bill Details</h3>
           <div className="dash-form">
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <label style={{ flex: 1 }}>
-                <input type="radio" checked={isWalkIn} onChange={() => setIsWalkIn(true)} style={{ marginRight: '8px' }} />
-                Walk-in Customer
-              </label>
-              <label style={{ flex: 1 }}>
-                <input type="radio" checked={!isWalkIn} onChange={() => setIsWalkIn(false)} style={{ marginRight: '8px' }} />
-                Existing Customer
-              </label>
+            <div style={{ padding: '12px', backgroundColor: '#f3f4f6', borderRadius: '8px', marginBottom: '8px', fontSize: '0.95rem', fontWeight: '500' }}>
+              Customer: Walk-in Customer
             </div>
-
-            {isWalkIn ? (
-              <>
-                <input className="dash-input" type="text" placeholder="Customer Name (Optional)" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-                <input className="dash-input" type="text" placeholder="Customer Phone (Optional)" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
-              </>
-            ) : (
-              <select className="dash-input" value={selectedCustomer} onChange={e => setSelectedCustomer(e.target.value)}>
-                <option value="">Select Existing Customer</option>
-                {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone || 'No phone'})</option>)}
-              </select>
-            )}
 
             <div style={{ display: 'flex', gap: '16px' }}>
               <div style={{ flex: 1 }}>
@@ -185,7 +179,7 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
                 <input className="dash-input" type="number" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: '#555' }}>Tax/GST (%)</label>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: '#555' }}>Tax (%)</label>
                 <input className="dash-input" type="number" value={tax} onChange={e => setTax(Number(e.target.value))} />
               </div>
             </div>
@@ -198,7 +192,6 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
                   <option>Card</option>
                   <option>UPI</option>
                   <option>Bank Transfer</option>
-                  <option>Due</option>
                 </select>
               </div>
               <div style={{ flex: 1 }}>
@@ -208,29 +201,13 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
             </div>
 
             <div style={{ backgroundColor: '#fafafa', padding: '16px', borderRadius: '8px', border: '1px solid #e5e7eb', marginTop: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>Subtotal:</span>
-                <span>₹{subtotal.toFixed(2)}</span>
-              </div>
-              {discount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#22c55e' }}>
-                  <span>Discount ({discount}%):</span>
-                  <span>-₹{discountAmount.toFixed(2)}</span>
-                </div>
-              )}
-              {tax > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#ef4444' }}>
-                  <span>Tax ({tax}%):</span>
-                  <span>+₹{taxAmount.toFixed(2)}</span>
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '12px', borderTop: '1px solid #e5e7eb', paddingTop: '12px' }}>
-                <span>Grand Total:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                <span>Total:</span>
                 <span>₹{total.toFixed(2)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', color: due > 0 ? '#ef4444' : '#555' }}>
-                <span>Due Amount:</span>
-                <span>₹{Math.max(0, due).toFixed(2)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', color: due > 0 ? '#ef4444' : '#22c55e' }}>
+                <span>{due > 0 ? 'Due Amount:' : 'Status:'}</span>
+                <span>{due > 0 ? `₹${due.toFixed(2)}` : 'Paid'}</span>
               </div>
             </div>
 
@@ -246,9 +223,8 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
             <p style={{ textAlign: 'center', marginBottom: '24px', color: '#555', fontSize: '0.9rem' }}>Tax Invoice</p>
             <div style={{ fontSize: '0.9rem', marginBottom: '16px' }}>
               <p style={{ margin: '4px 0' }}><strong>Date:</strong> {new Date(previewBill.date).toLocaleString()}</p>
-              <p style={{ margin: '4px 0' }}><strong>Customer:</strong> {previewBill.customer}</p>
               <p style={{ margin: '4px 0' }}><strong>Bill No:</strong> #{previewBill.id}</p>
-              <p style={{ margin: '4px 0' }}><strong>Payment:</strong> {previewBill.paymentMode} ({previewBill.status})</p>
+              <p style={{ margin: '4px 0' }}><strong>Status:</strong> {previewBill.status}</p>
             </div>
             <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px dashed #ccc' }} />
             <table style={{ width: '100%', marginBottom: '16px', fontSize: '0.9rem' }}>
@@ -262,7 +238,7 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
               <tbody>
                 {previewBill.items.map((it, i) => (
                   <tr key={i}>
-                    <td style={{ padding: '8px 0' }}>{it.name} <br/><span style={{ color: '#555', fontSize: '0.8rem' }}>₹{it.price} each</span></td>
+                    <td style={{ padding: '8px 0' }}>{it.name}</td>
                     <td style={{ padding: '8px 0' }}>{it.qty}</td>
                     <td style={{ padding: '8px 0' }}>₹{it.price * it.qty}</td>
                   </tr>
@@ -271,41 +247,26 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
             </table>
             <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px dashed #ccc' }} />
             <div style={{ fontSize: '0.9rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span>Subtotal:</span>
-                <span>₹{previewBill.subtotal?.toFixed(2) || previewBill.total.toFixed(2)}</span>
-              </div>
-              {(previewBill.discount || 0) > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span>Discount ({previewBill.discount}%):</span>
-                  <span>-₹{((previewBill.subtotal * previewBill.discount) / 100).toFixed(2)}</span>
-                </div>
-              )}
-              {(previewBill.tax || 0) > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span>Tax ({previewBill.tax}%):</span>
-                  <span>+₹{((previewBill.subtotal - ((previewBill.subtotal * previewBill.discount) / 100)) * previewBill.tax / 100).toFixed(2)}</span>
-                </div>
-              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '12px' }}>
                 <span>Total:</span>
                 <span>₹{previewBill.total.toFixed(2)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', color: '#555' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
                 <span>Paid:</span>
-                <span>₹{(previewBill.paid ?? previewBill.total).toFixed(2)}</span>
+                <span>₹{previewBill.paid.toFixed(2)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', color: '#555' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', color: previewBill.due > 0 ? '#ef4444' : 'inherit' }}>
                 <span>Due:</span>
-                <span>₹{(previewBill.due ?? 0).toFixed(2)}</span>
+                <span>₹{previewBill.due.toFixed(2)}</span>
               </div>
             </div>
             <button className="btn no-print" style={{ width: '100%', marginTop: '24px' }} onClick={() => window.print()}>Print Bill</button>
-            <button className="btn sidebar-btn no-print" style={{ width: '100%', marginTop: '12px', backgroundColor: '#e5e7eb', color: '#111', borderColor: '#d1d5db' }} onClick={() => setPreviewBill(null)}>Close Preview</button>
+            <button className="btn sidebar-btn no-print" style={{ width: '100%', marginTop: '12px', backgroundColor: '#e5e7eb', color: '#111', borderColor: '#d1d5db' }} onClick={() => setPreviewBill(null)}>Close</button>
           </Card>
         </div>
       )}
     </div>
   );
 }
+
 export default Billing;
