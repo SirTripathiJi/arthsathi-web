@@ -1,5 +1,26 @@
 /* Dashboard.css */
 
+:root {
+  --bg-color: #f7f3f0;
+  --grid-color: rgba(17, 17, 17, 0.05);
+  --card-bg: #ffffff;
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --border-color: #111111;
+  --border-width: 2px;
+  --input-bg: #fafafa;
+}
+
+body.dark {
+  --bg-color: #121212;
+  --grid-color: rgba(255, 255, 255, 0.05);
+  --card-bg: #1e1e1e;
+  --text-primary: #e5e5e5;
+  --text-secondary: #a0a0a0;
+  --border-color: #333333;
+  --input-bg: #2a2a2a;
+}
+
 .dashboard-layout {
   display: flex;
   min-height: 100vh;
@@ -7,6 +28,7 @@
   background-image: linear-gradient(var(--grid-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: 40px 40px;
+  color: var(--text-primary);
 }
 
 .sidebar {
@@ -44,19 +66,27 @@
 }
 
 .sidebar-nav li:hover {
-  background-color: rgba(17, 17, 17, 0.05);
+  background-color: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
 }
 
+body.dark .sidebar-nav li:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 .sidebar-nav li.active {
-  background-color: rgba(17, 17, 17, 0.1);
+  background-color: rgba(0, 0, 0, 0.05);
   color: var(--text-primary);
   font-weight: 600;
 }
 
+body.dark .sidebar-nav li.active {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 .sidebar-bottom {
   margin-top: auto;
-  border-top: 1px solid rgba(17, 17, 17, 0.1);
+  border-top: 1px solid var(--grid-color);
   padding-top: 24px;
 }
 
@@ -64,9 +94,10 @@
   margin-bottom: 16px;
 }
 
-.shop-info strong {
+.shop-info h3 {
   display: block;
   font-size: 1.1rem;
+  margin: 0 0 4px 0;
 }
 
 .shop-info p {
@@ -87,6 +118,9 @@
 
 .dashboard-header {
   margin-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .dashboard-header h1 {
@@ -101,20 +135,35 @@
   font-size: 1.15rem;
 }
 
+.theme-toggle {
+  background-color: var(--card-bg);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  box-shadow: 3px 3px 0px 0px var(--border-color);
+  transition: transform 0.1s;
+}
+
+.theme-toggle:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px var(--border-color);
+}
+
 .dash-card {
   background-color: var(--card-bg);
   border: var(--border-width) solid var(--border-color);
   border-radius: 14px;
-  box-shadow: 4px 4px 0px 0px #111111;
+  box-shadow: 4px 4px 0px 0px var(--border-color);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-.card-accent {
-  height: 6px;
-  width: 100%;
 }
 
 .card-content {
@@ -130,29 +179,11 @@
   gap: 24px;
 }
 
-.stat-item h4 {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-  margin-top: 0;
-}
-
-.stat-item .stat-value {
+.stat-value {
   font-size: 2.2rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
-}
-
-.dash-section h2 {
-  font-size: 1.75rem;
-  margin-bottom: 24px;
-}
-
-.grid-2col {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
 }
 
 .dash-form {
@@ -170,12 +201,13 @@
   font-size: 1.05rem;
   font-family: inherit;
   outline: none;
-  background-color: #fafafa;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
 }
 
 .dash-input:focus {
-  background-color: #ffffff;
-  box-shadow: 2px 2px 0px 0px #111111;
+  background-color: var(--card-bg);
+  box-shadow: 2px 2px 0px 0px var(--border-color);
 }
 
 .dash-table {
@@ -187,7 +219,7 @@
 .dash-table th, .dash-table td {
   text-align: left;
   padding: 16px 12px;
-  border-bottom: 1px solid rgba(17, 17, 17, 0.1);
+  border-bottom: 1px solid var(--grid-color);
   white-space: nowrap;
   font-size: 1.05rem;
 }
@@ -195,10 +227,6 @@
 .dash-table th {
   font-weight: 600;
   color: var(--text-secondary);
-}
-
-.mb-24 {
-  margin-bottom: 24px;
 }
 
 .badge-low {
@@ -228,16 +256,6 @@
 .text-btn.edit {
   color: #38bdf8;
   margin-right: 12px;
-}
-
-.status-active {
-  color: #22c55e;
-  font-weight: bold;
-}
-
-.status-inactive {
-  color: #9ca3af;
-  font-weight: bold;
 }
 
 .empty-state {

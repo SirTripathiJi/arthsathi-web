@@ -21,6 +21,19 @@ function Dashboard() {
     } else {
       setIsAuth(true);
     }
+
+    // Initialize Dark Mode
+    const isDark = localStorage.getItem("darkMode") === "true";
+    if (isDark) {
+      document.body.classList.add("dark");
+    }
+
+    return () => {
+      // Clean up dark mode when leaving dashboard if you want it strictly dashboard only
+      // but usually users want it to persist. The requirement says "Only for dashboard",
+      // so we should remove it when unmounting.
+      document.body.classList.remove("dark");
+    };
   }, [navigate]);
 
   const validTabs = ['Overview', 'Inventory', 'Billing', 'Transactions', 'Insights', 'Settings'];
