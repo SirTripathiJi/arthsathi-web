@@ -1,27 +1,37 @@
+import React from "react";
+
 const features = [
   {
-    title: "Product Management",
-    text: "Add, edit, delete, and search products easily.",
+    title: "Inventory Control",
+    text: "Stay accurate, avoid losses, and never miss a restock.",
   },
   {
-    title: "Stock Control",
-    text: "Increase stock when goods arrive and reduce stock after sales.",
+    title: "Billing Made Simple",
+    text: "Fast entries with instant, real profit visibility.",
   },
   {
-    title: "Low Stock Alert",
-    text: "See which items need to be reordered soon.",
+    title: "Business Insights",
+    text: "Understand performance clearly. No noise, just useful data.",
   },
   {
-    title: "Daily Summary",
-    text: "Check simple sales and stock overview in one place.",
+    title: "Privacy-First",
+    text: "100% local data storage. No cloud, no subscriptions.",
   },
   {
-    title: "Expense Entry",
-    text: "Add shop expenses like rent, transport, and electricity.",
+    title: "Smart Assistant (Coming Soon)",
+    text: "Simple business guidance based on your data.",
   },
   {
-    title: "Local Storage",
-    text: "Data stays saved in the browser without a backend.",
+    title: "Voice Entries (Coming Soon)",
+    text: "Add transactions by speaking naturally.",
+  },
+  {
+    title: "Profit Intelligence",
+    text: "See true profit after cost and expenses.",
+  },
+  {
+    title: "Customer Insights",
+    text: "Identify reliable and risky customers.",
   },
 ];
 
@@ -32,10 +42,9 @@ function Features() {
         <h2>Features</h2>
         <p>Everything needed for a small shop inventory project.</p>
       </div>
-
       <div className="features-grid">
         {features.map((item) => (
-          <div className="feature-card" key={item.title}>
+          <div className="card" key={item.title}>
             <h3>{item.title}</h3>
             <p>{item.text}</p>
           </div>
