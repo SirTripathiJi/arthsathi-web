@@ -77,7 +77,7 @@ function Inventory({ inventory, setInventory }) {
 
   return (
     <div className="dash-section">
-      <Card accentColor="#38bdf8" className="mb-24">
+      <Card accentColor="#38bdf8">
         <h3 style={{ marginBottom: '16px' }}>{form.id ? 'Edit Product' : 'Add Product'}</h3>
         <form className="dash-form" onSubmit={handleSave}>
           <div className="grid-2col">
@@ -96,7 +96,7 @@ function Inventory({ inventory, setInventory }) {
       </Card>
       
       <Card accentColor="#fb7185">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
           <h3 style={{ margin: 0 }}>Current Stock</h3>
           <input 
             type="text" 
@@ -124,7 +124,7 @@ function Inventory({ inventory, setInventory }) {
               </thead>
               <tbody>
                 {sortedInventory.map(item => {
-                  const { isLowStock, expiryStatus, daysLeft } = getStatus(item);
+                  const { isLowStock, expiryStatus } = getStatus(item);
                   
                   return (
                     <tr key={item.id}>
@@ -136,9 +136,9 @@ function Inventory({ inventory, setInventory }) {
                       <td>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                           {isLowStock && <span className="badge-low" style={{ margin: 0 }}>LOW STOCK</span>}
-                          {expiryStatus === "Expired" && <span className="badge-low" style={{ margin: 0, backgroundColor: '#7f1d1d' }}>EXPIRED</span>}
-                          {expiryStatus === "Near Expiry" && <span className="badge-low" style={{ margin: 0, backgroundColor: '#f97316' }}>NEAR EXPIRY</span>}
-                          {!isLowStock && expiryStatus === "Safe" && <span style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '0.9rem' }}>Good</span>}
+                          {expiryStatus === "Expired" && <span className="badge-status badge-expired" style={{ margin: 0 }}>EXPIRED</span>}
+                          {expiryStatus === "Near Expiry" && <span className="badge-status badge-near" style={{ margin: 0 }}>NEAR EXPIRY</span>}
+                          {!isLowStock && expiryStatus === "Safe" && <span className="badge-status badge-good" style={{ margin: 0 }}>GOOD</span>}
                         </div>
                       </td>
                       <td>

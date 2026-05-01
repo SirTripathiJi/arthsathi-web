@@ -35,7 +35,7 @@ function Transactions({ sales, setSales }) {
   return (
     <div className="dash-section">
       {updatingSale && (
-        <Card accentColor="#ef4444" className="mb-24">
+        <Card accentColor="#ef4444">
           <h3 style={{ marginBottom: '16px' }}>Update Payment for Bill #{updatingSale.id}</h3>
           <p style={{ marginBottom: '12px' }}>Remaining Due: <strong>₹{updatingSale.due.toFixed(2)}</strong></p>
           <form className="dash-form" onSubmit={handleUpdatePayment}>
@@ -75,12 +75,11 @@ function Transactions({ sales, setSales }) {
                   <th>Paid</th>
                   <th>Due</th>
                   <th>Status</th>
-                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSales.slice().reverse().map(sale => (
-                  <tr key={sale.id}>
+                  <tr key={sale.id} onClick={() => sale.due > 0 && setUpdatingSale(sale)} style={{ cursor: sale.due > 0 ? 'pointer' : 'default' }}>
                     <td>{sale.date ? new Date(sale.date).toLocaleDateString() : '-'}</td>
                     <td>#{sale.id}</td>
                     <td>₹{sale.total?.toFixed(2)}</td>
@@ -94,9 +93,6 @@ function Transactions({ sales, setSales }) {
                       }}>
                         {sale.status}
                       </span>
-                    </td>
-                    <td>
-                      {sale.due > 0 && <button className="text-btn edit" style={{ color: '#38bdf8' }} onClick={() => setUpdatingSale(sale)}>Update</button>}
                     </td>
                   </tr>
                 ))}

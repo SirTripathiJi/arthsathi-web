@@ -115,7 +115,7 @@ function Billing({ inventory, setInventory, sales, setSales }) {
 
   return (
     <div className="dash-section">
-      <div className="grid-2col no-print" style={{ marginBottom: '24px' }}>
+      <div className="grid-2col no-print">
         <Card accentColor="#facc15">
           <h3 style={{ marginBottom: '16px' }}>Add Items</h3>
           <form className="dash-form" onSubmit={handleAddToCart}>
@@ -169,24 +169,24 @@ function Billing({ inventory, setInventory, sales, setSales }) {
         <Card accentColor="#38bdf8">
           <h3 style={{ marginBottom: '16px' }}>Bill Details</h3>
           <div className="dash-form">
-            <div style={{ padding: '12px', backgroundColor: '#f3f4f6', borderRadius: '8px', marginBottom: '8px', fontSize: '0.95rem', fontWeight: '500' }}>
+            <div className="billing-info-box">
               Customer: Walk-in Customer
             </div>
 
             <div style={{ display: 'flex', gap: '16px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: '#555' }}>Discount (%)</label>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Discount (%)</label>
                 <input className="dash-input" type="number" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: '#555' }}>Tax (%)</label>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Tax (%)</label>
                 <input className="dash-input" type="number" value={tax} onChange={e => setTax(Number(e.target.value))} />
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '16px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: '#555' }}>Payment Mode</label>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Payment Mode</label>
                 <select className="dash-input" value={paymentMode} onChange={e => setPaymentMode(e.target.value)}>
                   <option>Cash</option>
                   <option>Card</option>
@@ -195,12 +195,12 @@ function Billing({ inventory, setInventory, sales, setSales }) {
                 </select>
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: '#555' }}>Amount Paid (₹)</label>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Amount Paid (₹)</label>
                 <input className="dash-input" type="number" placeholder={total.toString()} value={amountPaid} onChange={e => setAmountPaid(e.target.value)} />
               </div>
             </div>
 
-            <div style={{ backgroundColor: '#fafafa', padding: '16px', borderRadius: '8px', border: '1px solid #e5e7eb', marginTop: '8px' }}>
+            <div className="total-display-box">
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
                 <span>Total:</span>
                 <span>₹{total.toFixed(2)}</span>
@@ -220,13 +220,13 @@ function Billing({ inventory, setInventory, sales, setSales }) {
         <div className="bill-preview print-area" style={{ marginTop: '24px', maxWidth: '400px', margin: '0 auto' }}>
           <Card accentColor="#111">
             <h2 style={{ textAlign: 'center', marginBottom: '4px' }}>ArthSaathi</h2>
-            <p style={{ textAlign: 'center', marginBottom: '24px', color: '#555', fontSize: '0.9rem' }}>Tax Invoice</p>
+            <p style={{ textAlign: 'center', marginBottom: '24px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Tax Invoice</p>
             <div style={{ fontSize: '0.9rem', marginBottom: '16px' }}>
               <p style={{ margin: '4px 0' }}><strong>Date:</strong> {new Date(previewBill.date).toLocaleString()}</p>
               <p style={{ margin: '4px 0' }}><strong>Bill No:</strong> #{previewBill.id}</p>
               <p style={{ margin: '4px 0' }}><strong>Status:</strong> {previewBill.status}</p>
             </div>
-            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px dashed #ccc' }} />
+            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px dashed var(--grid-color)' }} />
             <table style={{ width: '100%', marginBottom: '16px', fontSize: '0.9rem' }}>
               <thead>
                 <tr style={{ textAlign: 'left' }}>
@@ -245,7 +245,7 @@ function Billing({ inventory, setInventory, sales, setSales }) {
                 ))}
               </tbody>
             </table>
-            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px dashed #ccc' }} />
+            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px dashed var(--grid-color)' }} />
             <div style={{ fontSize: '0.9rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '12px' }}>
                 <span>Total:</span>
