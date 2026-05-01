@@ -1,52 +1,61 @@
 import React from 'react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Card from './Card';
 
-function Insights({ inventory, sales }) {
-  const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalProfit = totalRevenue * 0.25; 
-  
-  const lowStock = inventory.filter(item => item.qty < 5);
-  
-  const itemSales = {};
+function Insights({ sales }) {
+  // Aggregate sales by date
+  const salesByDate = {};
+  const productSales = {};
+
   sales.forEach(sale => {
-    itemSales[sale.itemName] = (itemSales[sale.itemName] || 0) + sale.qty;
+    const dateStr = new Date(sale.date).toLocaleDateString();
+    if (!salesByDate[dateStr]) salesByDate[dateStr] = { date: dateStr, sales: 0, profit: 0 };
+    salesByDate[dateStr].sales += sale.total;
+    salesByDate[dateStr].profit += sale.profit;
+
+    sale.items.forEach(it => {
+      productSales[it.name] = (productSales[it.name] || 0) + it.qty;
+    });
   });
-  
-  let topItem = 'None';
-  let maxQty = 0;
-  Object.keys(itemSales).forEach(key => {
-    if (itemSales[key] > maxQty) {
-      maxQty = itemSales[key];
-      topItem = key;
-    }
-  });
+
+  const chartData = Object.values(salesByDate);
+  const topProductsData = Object.keys(productSales).map(k => ({ name: k, qty: productSales[k] })).sort((a,b) => b.qty - a.qty).slice(0, 5);
 
   return (
     <div className="dash-section">
-      <h2 style={{ marginBottom: '24px' }}>Business Insights</h2>
-      <div className="grid-2col">
-        <Card accentColor="#fb7185">
-          <h3 style={{ marginBottom: '16px' }}>Performance</h3>
-          <p><strong>Total Revenue:</strong> ₹{totalRevenue}</p>
-          <p style={{ marginTop: '12px' }}><strong>Estimated Profit (25%):</strong> ₹{totalProfit}</p>
-          <p style={{ marginTop: '12px' }}><strong>Top Selling Item:</strong> {topItem}</p>
-        </Card>
-        
+      <div className="grid-2col" style={{ marginBottom: '24px' }}>
         <Card accentColor="#facc15">
-          <h3 style={{ marginBottom: '16px' }}>Low Stock Alerts</h3>
-          {lowStock.length === 0 ? <p>All items have sufficient stock.</p> : (
-            <ul style={{ paddingLeft: '20px' }}>
-              {lowStock.map(item => (
-                <li key={item.id} style={{ marginBottom: '8px' }}>
-                  {item.name} - Only {item.qty} left
-                </li>
-              ))}
-            </ul>
-          )}
+          <h3 style={{ marginBottom: '16px' }}>Sales vs Profit Trend</h3>
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="sales" stroke="#38bdf8" strokeWidth={2} name="Revenue" />
+                <Line type="monotone" dataKey="profit" stroke="#22c55e" strokeWidth={2} name="Profit" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card accentColor="#fb7185">
+          <h3 style={{ marginBottom: '16px' }}>Top Products by Volume</h3>
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+              <BarChart data={topProductsData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="qty" fill="#facc15" name="Quantity Sold" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       </div>
     </div>
   );
 }
-
 export default Insights;

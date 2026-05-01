@@ -52,6 +52,31 @@
   font-weight: 600;
 }
 
+.sidebar-bottom {
+  margin-top: auto;
+  border-top: 1px solid rgba(17, 17, 17, 0.1);
+  padding-top: 24px;
+}
+
+.shop-info {
+  margin-bottom: 16px;
+}
+
+.shop-info strong {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.shop-info p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.sidebar-btn {
+  width: 100%;
+}
+
 .dashboard-main {
   flex: 1;
   padding: 40px;
@@ -154,11 +179,68 @@
   text-align: left;
   padding: 12px;
   border-bottom: 1px solid rgba(17, 17, 17, 0.1);
+  white-space: nowrap;
 }
 
 .dash-table th {
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+.mb-24 {
+  margin-bottom: 24px;
+}
+
+.badge-low {
+  background-color: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.text-btn.danger {
+  color: #ef4444;
+}
+
+.status-active {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.status-inactive {
+  color: #9ca3af;
+  font-weight: bold;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -184,6 +266,10 @@
   }
   .sidebar-nav li {
     margin-bottom: 0;
+  }
+  .sidebar-bottom {
+    margin-top: 24px;
+    padding-top: 16px;
   }
   .dashboard-main {
     padding: 24px;

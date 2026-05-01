@@ -1,59 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import Stats from './Stats';
+import Topbar from './Topbar';
+import Overview from './Overview';
 import Inventory from './Inventory';
+import Customers from './Customers';
 import Billing from './Billing';
+import Transactions from './Transactions';
 import Insights from './Insights';
+import Settings from './Settings';
 import './Dashboard.css';
 
 function Dashboard() {
-  const [activeTab, setActiveTab] = useState('Dashboard');
-  const [inventory, setInventory] = useState([]);
-  const [sales, setSales] = useState([]);
-  const [customers, setCustomers] = useState([]);
+  const validTabs = ['Overview', 'Inventory', 'Customers', 'Billing', 'Transactions', 'Insights', 'Settings'];
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('arth_tab');
+    return validTabs.includes(saved) ? saved : 'Overview';
+  });
+  const [inventory, setInventory] = useState(() => JSON.parse(localStorage.getItem('arth_inv')) || []);
+  const [customers, setCustomers] = useState(() => JSON.parse(localStorage.getItem('arth_cust')) || []);
+  const [sales, setSales] = useState(() => JSON.parse(localStorage.getItem('arth_sales')) || []);
 
-  const totalSales = sales.reduce((sum, sale) => sum + sale.total, 0);
-  const profit = totalSales * 0.25;
+  useEffect(() => {
+    localStorage.setItem('arth_tab', activeTab);
+    localStorage.setItem('arth_inv', JSON.stringify(inventory));
+    localStorage.setItem('arth_cust', JSON.stringify(customers));
+    localStorage.setItem('arth_sales', JSON.stringify(sales));
+  }, [activeTab, inventory, customers, sales]);
 
   return (
     <div className="dashboard-layout">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="dashboard-main">
-        {activeTab === 'Dashboard' && (
-          <>
-            <header className="dashboard-header">
-              <h1>Dashboard</h1>
-              <p>Welcome back! Here is a live overview of your store.</p>
-            </header>
-            <section className="dashboard-content">
-              <Stats 
-                sales={totalSales} 
-                profit={profit} 
-                orders={sales.length} 
-                customers={customers.length} 
-              />
-            </section>
-          </>
-        )}
-        {activeTab === 'Inventory' && (
-          <Inventory inventory={inventory} setInventory={setInventory} />
-        )}
-        {activeTab === 'Billing' && (
-          <Billing 
-            inventory={inventory} 
-            setInventory={setInventory} 
-            sales={sales} 
-            setSales={setSales} 
-            customers={customers}
-            setCustomers={setCustomers}
-          />
-        )}
-        {activeTab === 'Insights' && (
-          <Insights inventory={inventory} sales={sales} />
-        )}
+        <Topbar activeTab={activeTab} />
+        {activeTab === 'Overview' && <Overview inventory={inventory} sales={sales} />}
+        {activeTab === 'Inventory' && <Inventory inventory={inventory} setInventory={setInventory} />}
+        {activeTab === 'Customers' && <Customers customers={customers} setCustomers={setCustomers} />}
+        {activeTab === 'Billing' && <Billing inventory={inventory} setInventory={setInventory} sales={sales} setSales={setSales} customers={customers} setCustomers={setCustomers} />}
+        {activeTab === 'Transactions' && <Transactions sales={sales} />}
+        {activeTab === 'Insights' && <Insights sales={sales} />}
+        {activeTab === 'Settings' && <Settings setInventory={setInventory} setCustomers={setCustomers} setSales={setSales} setActiveTab={setActiveTab} />}
       </main>
     </div>
   );
 }
-
 export default Dashboard;
