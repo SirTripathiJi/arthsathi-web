@@ -19,7 +19,7 @@ function Pricing() {
             <li>Basic Insights</li>
             <li>Offline Access</li>
           </ul>
-          <a href="#" className="btn" style={{backgroundColor: "var(--card-bg)", color: "var(--text-primary)"}}>Get Started</a>
+          <a href="#" className="btn btn-secondary">Get Started</a>
         </div>
 
         <div className="card pricing-card highlighted">
