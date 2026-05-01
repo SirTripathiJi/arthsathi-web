@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import './Login.css';
 
 function Login() {
   const [isLogin, setIsLogin] = useState(true);
+  const navigate = useNavigate();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    navigate('/dashboard');
+  };
 
   return (
     <AuthLayout>
@@ -27,7 +34,7 @@ function Login() {
           </button>
         </div>
 
-        <form className="auth-form" onSubmit={(e) => e.preventDefault()}>
+        <form className="auth-form" onSubmit={handleSubmit}>
           {!isLogin && (
             <>
               <div className="input-group">
