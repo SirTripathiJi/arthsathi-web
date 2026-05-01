@@ -90,49 +90,6 @@ The insights page shows charts and product-performance analytics for a more visu
 ### 8. Settings
 The settings page provides app-level data control and support information.
 
-## Component Structure
-
-The project is organized into reusable, page-focused components to keep the codebase maintainable and easy to extend.
-
-### Dashboard Components
-- `Dashboard.jsx` - main dashboard container and layout
-- `Overview.jsx` - KPI cards, alerts, and business health summary
-- `Inventory.jsx` - inventory form and stock table
-- `Billing.jsx` - billing workflow and bill summary
-- `Transactions.jsx` - sales history table
-- `Insights.jsx` - analytics charts and performance views
-- `Settings.jsx` - data reset and support section
-- `Sidebar.jsx` - navigation menu
-- `Topbar.jsx` - top header area and theme toggle
-- `Card.jsx` - reusable card wrapper
-- `Stats.jsx` - compact metric display blocks
-- `Dashboard.css` - shared dashboard styling
-
-### Landing Page Components
-- `app.jsx` - landing page root component
-- `Navbar.jsx` - top navigation bar
-- `Hero.jsx` - headline and primary call-to-action
-- `Features.jsx` - feature showcase grid
-- `Highlights.jsx` - supporting value statements
-- `HowItWorks.jsx` - workflow explanation section
-- `Pricing.jsx` - pricing cards and plan details
-- `Footer.jsx` - footer and support links
-- `Stats.jsx` - landing page statistics block
-- `App.css` - landing page styling
-- `index.css` - global styles
-- `main.jsx` - application bootstrap
-
-### Login Components
-- `AuthLayout.jsx` - authentication page wrapper
-- `Login.jsx` - login and sign-up form
-- `Login.css` - authentication styles
-
-### Assets and Utilities
-- `src/assets/hero.png` - landing page visual asset
-- `public/favicon.svg` - application icon
-- `public/icons.svg` - icon asset bundle
-- `utils/` - shared utility code
-
 ## Project Structure
 
 ```text
