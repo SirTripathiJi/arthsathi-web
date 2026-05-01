@@ -16,9 +16,15 @@ function Dashboard() {
     const saved = localStorage.getItem('arth_tab');
     return validTabs.includes(saved) ? saved : 'Overview';
   });
-  const [inventory, setInventory] = useState(() => JSON.parse(localStorage.getItem('arth_inv')) || []);
-  const [customers, setCustomers] = useState(() => JSON.parse(localStorage.getItem('arth_cust')) || []);
-  const [sales, setSales] = useState(() => JSON.parse(localStorage.getItem('arth_sales')) || []);
+  const [inventory, setInventory] = useState(() => {
+    try { const val = JSON.parse(localStorage.getItem('arth_inv')); return Array.isArray(val) ? val : []; } catch { return []; }
+  });
+  const [customers, setCustomers] = useState(() => {
+    try { const val = JSON.parse(localStorage.getItem('arth_cust')); return Array.isArray(val) ? val : []; } catch { return []; }
+  });
+  const [sales, setSales] = useState(() => {
+    try { const val = JSON.parse(localStorage.getItem('arth_sales')); return Array.isArray(val) ? val : []; } catch { return []; }
+  });
 
   useEffect(() => {
     localStorage.setItem('arth_tab', activeTab);

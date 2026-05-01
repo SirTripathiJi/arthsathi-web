@@ -28,14 +28,14 @@ function Transactions({ sales }) {
               </tr>
             </thead>
             <tbody>
-              {filteredSales.slice().reverse().map(sale => (
+              {(filteredSales || []).slice().reverse().map(sale => (
                 <tr key={sale.id}>
-                  <td>{new Date(sale.date).toLocaleString()}</td>
+                  <td>{sale.date ? new Date(sale.date).toLocaleString() : new Date().toLocaleString()}</td>
                   <td>#{sale.id}</td>
-                  <td>{sale.customer}</td>
-                  <td>{sale.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</td>
-                  <td>₹{sale.total}</td>
-                  <td style={{ color: '#22c55e', fontWeight: 'bold' }}>₹{sale.profit}</td>
+                  <td>{sale.customer || 'Guest'}</td>
+                  <td>{(sale.items || [{ name: sale.itemName || 'Unknown Item', qty: sale.qty || 1 }]).map(i => `${i.name} (x${i.qty})`).join(', ')}</td>
+                  <td>₹{sale.total || 0}</td>
+                  <td style={{ color: '#22c55e', fontWeight: 'bold' }}>₹{sale.profit || 0}</td>
                 </tr>
               ))}
             </tbody>

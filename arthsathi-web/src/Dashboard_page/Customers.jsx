@@ -21,14 +21,16 @@ function Customers({ customers, setCustomers }) {
               </tr>
             </thead>
             <tbody>
-              {customers.map(c => {
-                const isActive = new Date(c.lastVisit) > new Date(Date.now() - 30*24*60*60*1000);
+              {(customers || []).map(c => {
+                const now = new Date().getTime();
+                const lastVisitTime = c.lastVisit ? new Date(c.lastVisit).getTime() : now;
+                const isActive = lastVisitTime > (now - 30*24*60*60*1000);
                 return (
                   <tr key={c.id}>
                     <td>{c.name}</td>
                     <td>{c.phone || '-'}</td>
-                    <td>₹{c.totalSpent}</td>
-                    <td>{new Date(c.lastVisit).toLocaleDateString()}</td>
+                    <td>₹{c.totalSpent || 0}</td>
+                    <td>{c.lastVisit ? new Date(c.lastVisit).toLocaleDateString() : '-'}</td>
                     <td><span className={isActive ? 'status-active' : 'status-inactive'}>{isActive ? 'Active' : 'Inactive'}</span></td>
                     <td><button className="text-btn danger" onClick={() => handleDelete(c.id)}>Delete</button></td>
                   </tr>

@@ -24,15 +24,17 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
     updatedInventory[itemIndex].qty -= saleQty;
     setInventory(updatedInventory);
 
-    const total = saleQty * item.sellPrice;
-    const profit = (item.sellPrice - item.costPrice) * saleQty;
+    const sell = item.sellPrice || item.price || 0;
+    const cost = item.costPrice || 0;
+    const total = saleQty * sell;
+    const profit = (sell - cost) * saleQty;
     const date = new Date().toISOString();
 
     // Handle Customer
     const existingCustIndex = customers.findIndex(c => c.name.toLowerCase() === customerName.toLowerCase());
     let updatedCustomers = [...customers];
     if (existingCustIndex > -1) {
-      updatedCustomers[existingCustIndex].totalSpent += total;
+      updatedCustomers[existingCustIndex].totalSpent = (updatedCustomers[existingCustIndex].totalSpent || 0) + total;
       updatedCustomers[existingCustIndex].lastVisit = date;
       if (customerPhone) updatedCustomers[existingCustIndex].phone = customerPhone;
     } else {
@@ -41,7 +43,7 @@ function Billing({ inventory, setInventory, sales, setSales, customers, setCusto
     setCustomers(updatedCustomers);
 
     // Add Sale
-    const newSale = { id: Date.now(), items: [{ name: item.name, qty: saleQty, price: item.sellPrice }], customer: customerName, total, profit, date };
+    const newSale = { id: Date.now(), items: [{ name: item.name, qty: saleQty, price: sell }], customer: customerName, total, profit, date };
     setSales([...sales, newSale]);
 
     setPreviewBill(newSale);

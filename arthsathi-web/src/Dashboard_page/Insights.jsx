@@ -7,14 +7,15 @@ function Insights({ sales }) {
   const salesByDate = {};
   const productSales = {};
 
-  sales.forEach(sale => {
-    const dateStr = new Date(sale.date).toLocaleDateString();
+  (sales || []).forEach(sale => {
+    const dateStr = sale.date ? new Date(sale.date).toLocaleDateString() : new Date().toLocaleDateString();
     if (!salesByDate[dateStr]) salesByDate[dateStr] = { date: dateStr, sales: 0, profit: 0 };
-    salesByDate[dateStr].sales += sale.total;
-    salesByDate[dateStr].profit += sale.profit;
+    salesByDate[dateStr].sales += (sale.total || 0);
+    salesByDate[dateStr].profit += (sale.profit || 0);
 
-    sale.items.forEach(it => {
-      productSales[it.name] = (productSales[it.name] || 0) + it.qty;
+    const items = sale.items || [{ name: sale.itemName || 'Unknown Item', qty: sale.qty || 1 }];
+    items.forEach(it => {
+      productSales[it.name] = (productSales[it.name] || 0) + (it.qty || 1);
     });
   });
 

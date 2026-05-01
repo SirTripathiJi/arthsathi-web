@@ -2,14 +2,17 @@ import React from 'react';
 import Card from './Card';
 
 function Overview({ inventory, sales }) {
-  const totalSales = sales.reduce((sum, sale) => sum + sale.total, 0);
-  const netProfit = sales.reduce((sum, sale) => sum + sale.profit, 0);
-  const stockCount = inventory.reduce((sum, item) => sum + item.qty, 0);
+  const totalSales = (sales || []).reduce((sum, sale) => sum + (sale.total || 0), 0);
+  const netProfit = (sales || []).reduce((sum, sale) => sum + (sale.profit || 0), 0);
+  const stockCount = (inventory || []).reduce((sum, item) => sum + (item.qty || 0), 0);
   
   const today = new Date().toDateString();
-  const todaySales = sales.filter(s => new Date(s.date).toDateString() === today);
+  const todaySales = (sales || []).filter(s => {
+    if (!s.date) return false;
+    return new Date(s.date).toDateString() === today;
+  });
 
-  const lowStock = inventory.filter(item => item.qty <= 5);
+  const lowStock = (inventory || []).filter(item => (item.qty || 0) <= 5);
 
   return (
     <div className="dash-section">
