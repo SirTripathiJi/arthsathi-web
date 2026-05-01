@@ -2,102 +2,120 @@ import React from 'react';
 import Card from './Card';
 
 function Overview({ inventory, sales }) {
-  const LOW_STOCK_LIMIT = 5;
+  // Current date for comparison
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const getStatus = (item) => {
-    const isLowStock = (item.qty || 0) <= LOW_STOCK_LIMIT;
+  // Helper to check item alerts
+  const checkAlerts = (item) => {
+    const isLow = item.qty <= 5;
     let isExpired = false;
-    let isNearExpiry = false;
 
     if (item.expiry) {
       const expDate = new Date(item.expiry);
       expDate.setHours(0, 0, 0, 0);
-      const diffDays = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      if (diffDays < 0) isExpired = true;
-      else if (diffDays <= 7) isNearExpiry = true;
+      if (expDate < today) isExpired = true;
     }
-    return { isLowStock, isExpired, isNearExpiry };
+    return { isLow, isExpired };
   };
 
-  const totalSales = (sales || []).reduce((sum, sale) => sum + (sale.total || 0), 0);
-  const netProfit = (sales || []).reduce((sum, sale) => sum + (sale.profit || 0), 0);
-  const stockCount = (inventory || []).reduce((sum, item) => sum + (item.qty || 0), 0);
-  const todaySalesCount = (sales || []).filter(s => s.date && new Date(s.date).toDateString() === today.toDateString()).length;
+  // --- CALCULATE SUMMARY STATS ---
+  
+  // 1. Total Sales (Revenue)
+  const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
+  
+  // 2. Net Profit
+  const totalProfit = sales.reduce((sum, sale) => sum + sale.profit, 0);
+  
+  // 3. Total Items in Stock
+  const totalStock = inventory.reduce((sum, item) => sum + item.qty, 0);
+  
+  // 4. Sales Made Today
+  const salesToday = sales.filter(sale => {
+    const saleDate = new Date(sale.date).toDateString();
+    return saleDate === today.toDateString();
+  }).length;
 
-  const lowStockItems = (inventory || []).filter(item => getStatus(item).isLowStock);
-  const expiredItems = (inventory || []).filter(item => getStatus(item).isExpired);
-  const nearExpiryItems = (inventory || []).filter(item => getStatus(item).isNearExpiry);
+  // --- CALCULATE ALERTS ---
+  
+  const lowStockItems = inventory.filter(item => checkAlerts(item).isLow);
+  const expiredItems = inventory.filter(item => checkAlerts(item).isExpired);
 
-  const alerts = [...expiredItems.map(i => ({...i, type: 'Expired'})), 
-                  ...nearExpiryItems.map(i => ({...i, type: 'Near Expiry'})), 
-                  ...lowStockItems.map(i => ({...i, type: 'Low Stock'}))].slice(0, 3);
+  // Combine top 3 alerts to show in the list
+  const recentAlerts = [
+    ...expiredItems.map(i => ({ name: i.name, type: 'Expired' })),
+    ...lowStockItems.map(i => ({ name: i.name, type: 'Low Stock' }))
+  ].slice(0, 3);
 
   return (
     <div className="dash-section">
+      {/* Top Row: Quick Stats */}
       <div className="stats-grid" style={{ marginBottom: '24px' }}>
         <Card accentColor="#facc15">
           <h4>Total Sales</h4>
-          <p className="stat-value">₹{totalSales.toFixed(0)}</p>
+          <p className="stat-value">₹{totalRevenue.toFixed(0)}</p>
         </Card>
         <Card accentColor="#22c55e">
           <h4>Net Profit</h4>
-          <p className="stat-value">₹{netProfit.toFixed(0)}</p>
+          <p className="stat-value">₹{totalProfit.toFixed(0)}</p>
         </Card>
         <Card accentColor="#38bdf8">
-          <h4>Products in Stock</h4>
-          <p className="stat-value">{stockCount}</p>
+          <h4>Items in Stock</h4>
+          <p className="stat-value">{totalStock}</p>
         </Card>
         <Card accentColor="#fb7185">
-          <h4>Transactions Today</h4>
-          <p className="stat-value">{todaySalesCount}</p>
+          <h4>Sales Today</h4>
+          <p className="stat-value">{salesToday}</p>
         </Card>
       </div>
 
+      {/* Bottom Row: Alerts and Cash Flow */}
       <div className="grid-2col">
+        {/* Alerts Card */}
         <Card accentColor="#fb7185">
           <h3 style={{ marginBottom: '16px' }}>Critical Alerts</h3>
           <div style={{ display: 'flex', gap: '24px', marginBottom: '20px' }}>
             <div>
               <p style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '1.2rem', margin: 0 }}>{lowStockItems.length}</p>
-              <p style={{ fontSize: '0.9rem', color: '#666', margin: 0 }}>Low Stock</p>
+              <p style={{ fontSize: '0.8rem', color: '#666' }}>Low Stock</p>
             </div>
             <div>
               <p style={{ color: '#7f1d1d', fontWeight: 'bold', fontSize: '1.2rem', margin: 0 }}>{expiredItems.length}</p>
-              <p style={{ fontSize: '0.9rem', color: '#666', margin: 0 }}>Expired</p>
+              <p style={{ fontSize: '0.8rem', color: '#666' }}>Expired</p>
             </div>
           </div>
           
-          {alerts.length === 0 ? <p className="empty-state">No critical alerts.</p> : (
+          {recentAlerts.length === 0 ? (
+            <p className="empty-state">No alerts today!</p>
+          ) : (
             <ul style={{ listStyle: 'none', padding: 0 }}>
-              {alerts.map((item, idx) => (
-                <li key={idx} style={{ padding: '10px', borderBottom: '1px solid #eee', fontSize: '0.95rem', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{item.name}</span>
-                  <span style={{ 
-                    fontWeight: 'bold', 
-                    color: item.type === 'Expired' ? '#7f1d1d' : (item.type === 'Low Stock' ? '#ef4444' : '#f97316')
-                  }}>{item.type}</span>
+              {recentAlerts.map((alert, index) => (
+                <li key={index} style={{ padding: '10px', borderBottom: '1px solid var(--grid-color)', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{alert.name}</span>
+                  <span style={{ fontWeight: 'bold', color: alert.type === 'Expired' ? '#7f1d1d' : '#ef4444' }}>{alert.type}</span>
                 </li>
               ))}
             </ul>
           )}
         </Card>
 
+        {/* Cash Flow Card */}
         <Card accentColor="#38bdf8">
-          <h3 style={{ marginBottom: '16px' }}>Cash Flow</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h3 style={{ marginBottom: '16px' }}>Business Health</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Total Revenue:</span>
-              <span style={{ fontWeight: 'bold' }}>₹{totalSales.toFixed(2)}</span>
+              <span style={{ fontWeight: 'bold' }}>₹{totalRevenue.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Total Profit:</span>
-              <span style={{ fontWeight: 'bold', color: '#22c55e' }}>₹{netProfit.toFixed(2)}</span>
+              <span style={{ fontWeight: 'bold', color: '#22c55e' }}>₹{totalProfit.toFixed(2)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: '12px' }}>
-              <span>Average Margin:</span>
-              <span style={{ fontWeight: 'bold' }}>{totalSales > 0 ? ((netProfit / totalSales) * 100).toFixed(1) : 0}%</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--grid-color)', paddingTop: '16px' }}>
+              <span>Profit Margin:</span>
+              <span style={{ fontWeight: 'bold' }}>
+                {totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0}%
+              </span>
             </div>
           </div>
         </Card>
@@ -105,4 +123,5 @@ function Overview({ inventory, sales }) {
     </div>
   );
 }
+
 export default Overview;

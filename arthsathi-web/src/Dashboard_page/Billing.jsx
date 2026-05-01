@@ -2,154 +2,164 @@ import React, { useState } from 'react';
 import Card from './Card';
 
 function Billing({ inventory, setInventory, sales, setSales }) {
+  // Items in the current bill (cart)
   const [cart, setCart] = useState([]);
-  const [selectedItem, setSelectedItem] = useState('');
-  const [qty, setQty] = useState('');
   
-  const [discount, setDiscount] = useState(0);
-  const [tax, setTax] = useState(0);
+  // Selection state for adding items
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [quantityInput, setQuantityInput] = useState('');
+  
+  // Bill details (discounts, tax, payments)
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [taxPercent, setTaxPercent] = useState(0);
   const [paymentMode, setPaymentMode] = useState('Cash');
-  const [amountPaid, setAmountPaid] = useState('');
+  const [paidAmount, setPaidAmount] = useState('');
 
-  const [previewBill, setPreviewBill] = useState(null);
+  // Bill preview state
+  const [billPreview, setBillPreview] = useState(null);
 
-  const getStatus = (item) => {
-    const isLowStock = (item.qty || 0) <= 5;
+  // Simple helper to check stock status
+  const checkStockStatus = (item) => {
+    const isLow = item.qty <= 5;
     let isExpired = false;
-    let isNearExpiry = false;
 
     if (item.expiry) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const expDate = new Date(item.expiry);
       expDate.setHours(0, 0, 0, 0);
-      const diffDays = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      if (diffDays < 0) isExpired = true;
-      else if (diffDays <= 7) isNearExpiry = true;
+      if (expDate < today) isExpired = true;
     }
-    return { isLowStock, isExpired, isNearExpiry };
+    return { isLow, isExpired };
   };
 
-  const handleAddToCart = (e) => {
+  // Add an item to the current bill
+  const handleAddItem = (e) => {
     e.preventDefault();
-    if (!selectedItem || !qty) return;
-    
-    const item = inventory.find(i => i.id.toString() === selectedItem);
-    if (!item) return;
+    if (!selectedProductId || !quantityInput) return;
 
-    if (item.qty <= 0) return alert('Cannot sell: This product is out of stock!');
-    
-    const { isExpired, isNearExpiry } = getStatus(item);
-    if (isExpired) {
-      if (!window.confirm('WARNING: This product is EXPIRED. Do you still want to add it?')) return;
-    } else if (isNearExpiry) {
-      if (!window.confirm('Warning: This product is near expiry. Continue?')) return;
-    }
+    // Find the product in inventory
+    const product = inventory.find(p => p.id.toString() === selectedProductId);
+    if (!product) return;
 
-    const saleQty = Number(qty);
-    const existingCartItem = cart.find(c => c.id === item.id);
-    const totalQtyInCart = (existingCartItem ? existingCartItem.qty : 0) + saleQty;
-    
-    if (item.qty < totalQtyInCart) return alert(`Not enough stock! Only ${item.qty} available.`);
+    // Safety checks
+    if (product.qty <= 0) return alert('Out of stock!');
 
-    if (existingCartItem) {
-      setCart(cart.map(c => c.id === item.id ? { ...c, qty: totalQtyInCart } : c));
+    const { isExpired } = checkStockStatus(product);
+    if (isExpired && !window.confirm('This item is EXPIRED. Add anyway?')) return;
+
+    const requestedQty = Number(quantityInput);
+    
+    // Check if enough stock exists
+    const itemInCart = cart.find(c => c.id === product.id);
+    const totalInCart = (itemInCart ? itemInCart.qty : 0) + requestedQty;
+
+    if (product.qty < totalInCart) return alert(`Only ${product.qty} available!`);
+
+    if (itemInCart) {
+      // Update existing item in cart
+      const updatedCart = cart.map(c => c.id === product.id ? { ...c, qty: totalInCart } : c);
+      setCart(updatedCart);
     } else {
-      setCart([...cart, { 
-        id: item.id, 
-        name: item.name, 
-        price: item.sellPrice || 0, 
-        costPrice: item.costPrice || 0, 
-        qty: saleQty 
-      }]);
+      // Add new item to cart
+      const newItem = {
+        id: product.id,
+        name: product.name,
+        price: product.sellPrice,
+        costPrice: product.costPrice,
+        qty: requestedQty
+      };
+      setCart([...cart, newItem]);
     }
-    
-    setSelectedItem('');
-    setQty('');
+
+    // Reset inputs
+    setSelectedProductId('');
+    setQuantityInput('');
   };
 
-  const handleRemoveFromCart = (id) => {
-    setCart(cart.filter(c => c.id !== id));
+  const handleRemoveItem = (id) => {
+    setCart(cart.filter(item => item.id !== id));
   };
 
+  // Calculate totals
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const discountAmount = (subtotal * (discount || 0)) / 100;
-  const taxableAmount = subtotal - discountAmount;
-  const taxAmount = (taxableAmount * (tax || 0)) / 100;
-  const total = taxableAmount + taxAmount;
-  const paid = amountPaid === '' ? total : Number(amountPaid);
-  const due = Math.max(0, total - paid);
-  const status = due === 0 ? 'Paid' : 'Due';
+  const discountVal = (subtotal * discountPercent) / 100;
+  const taxableVal = subtotal - discountVal;
+  const taxVal = (taxableVal * taxPercent) / 100;
+  
+  const finalTotal = taxableVal + taxVal;
+  const finalPaid = paidAmount === '' ? finalTotal : Number(paidAmount);
+  const finalDue = Math.max(0, finalTotal - finalPaid);
+  const billStatus = finalDue === 0 ? 'Paid' : 'Due';
 
+  // Process the final sale
   const handleGenerateBill = () => {
-    if (cart.length === 0) return alert('Cart is empty!');
+    if (cart.length === 0) return alert('No items in bill!');
 
-    // Deduct stock
-    const updatedInventory = [...inventory];
-    cart.forEach(cartItem => {
-      const invIndex = updatedInventory.findIndex(i => i.id === cartItem.id);
-      if (invIndex > -1) updatedInventory[invIndex].qty -= cartItem.qty;
+    // 1. Update inventory quantities
+    const newInventory = inventory.map(product => {
+      const soldItem = cart.find(c => c.id === product.id);
+      if (soldItem) {
+        return { ...product, qty: product.qty - soldItem.qty };
+      }
+      return product;
     });
-    setInventory(updatedInventory);
+    setInventory(newInventory);
 
-    // Calculate total profit
+    // 2. Calculate profit for this sale
     const totalCost = cart.reduce((sum, item) => sum + (item.costPrice * item.qty), 0);
-    const profit = total - totalCost;
+    const profit = finalTotal - totalCost;
 
-    const date = new Date().toISOString();
-
-    // Add Sale
-    const newSale = { 
-      id: Date.now(), 
-      items: cart.map(c => ({ name: c.name, qty: c.qty, price: c.price })), 
-      total, paid, due, status, paymentMode, profit, date 
+    // 3. Create the sale record
+    const saleRecord = {
+      id: Date.now(),
+      items: cart.map(c => ({ name: c.name, qty: c.qty, price: c.price })),
+      total: finalTotal,
+      paid: finalPaid,
+      due: finalDue,
+      status: billStatus,
+      paymentMode,
+      profit,
+      date: new Date().toISOString()
     };
-    setSales([...sales, newSale]);
+    
+    setSales([...sales, saleRecord]);
 
-    setPreviewBill(newSale);
+    // 4. Show preview and reset
+    setBillPreview(saleRecord);
     setCart([]);
-    setAmountPaid('');
-    setDiscount(0);
-    setTax(0);
+    setPaidAmount('');
+    setDiscountPercent(0);
+    setTaxPercent(0);
   };
 
   return (
     <div className="dash-section">
       <div className="grid-2col no-print">
+        {/* Left Card: Item Selection */}
         <Card accentColor="#facc15">
-          <h3 style={{ marginBottom: '16px' }}>Add Items</h3>
-          <form className="dash-form" onSubmit={handleAddToCart}>
-            <select className="dash-input" value={selectedItem} onChange={e => setSelectedItem(e.target.value)} required>
+          <h3 style={{ marginBottom: '16px' }}>Add Items to Bill</h3>
+          <form className="dash-form" onSubmit={handleAddItem}>
+            <select className="dash-input" value={selectedProductId} onChange={e => setSelectedProductId(e.target.value)} required>
               <option value="">Select Product</option>
-              {inventory.map(item => {
-                const { isLowStock, isExpired } = getStatus(item);
-                let label = item.name;
-                if (isExpired) label += ' (EXPIRED)';
-                else if (item.qty <= 0) label += ' (OUT OF STOCK)';
-                else if (isLowStock) label += ' (LOW STOCK)';
-                
-                return (
-                  <option key={item.id} value={item.id} disabled={item.qty <= 0}>
-                    {label} - ₹{item.sellPrice || 0}
-                  </option>
-                );
-              })}
+              {inventory.map(p => (
+                <option key={p.id} value={p.id} disabled={p.qty <= 0}>
+                  {p.name} - ₹{p.sellPrice} ({p.qty} in stock)
+                </option>
+              ))}
             </select>
-            <input className="dash-input" type="number" placeholder="Quantity" value={qty} onChange={e => setQty(e.target.value)} required />
+            <input className="dash-input" type="number" placeholder="Quantity" value={quantityInput} onChange={e => setQuantityInput(e.target.value)} required />
             <button className="btn" type="submit">Add to Bill</button>
           </form>
 
-          <h3 style={{ marginTop: '24px', marginBottom: '16px' }}>Current Bill</h3>
-          {cart.length === 0 ? <p className="empty-state" style={{ padding: '20px 0' }}>No items added yet.</p> : (
-            <div style={{ overflowX: 'auto', marginBottom: '16px' }}>
-              <table className="dash-table" style={{ fontSize: '0.95rem' }}>
+          <h3 style={{ marginTop: '24px', marginBottom: '16px' }}>Items on Bill</h3>
+          {cart.length === 0 ? (
+            <p className="empty-state">No items added.</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="dash-table">
                 <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Total</th>
-                    <th>Action</th>
-                  </tr>
+                  <tr><th>Item</th><th>Qty</th><th>Total</th><th>Action</th></tr>
                 </thead>
                 <tbody>
                   {cart.map(item => (
@@ -157,7 +167,7 @@ function Billing({ inventory, setInventory, sales, setSales }) {
                       <td>{item.name}</td>
                       <td>{item.qty}</td>
                       <td>₹{item.price * item.qty}</td>
-                      <td><button type="button" className="text-btn danger" onClick={() => handleRemoveFromCart(item.id)}>Remove</button></td>
+                      <td><button type="button" className="text-btn danger" onClick={() => handleRemoveItem(item.id)}>Remove</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -166,48 +176,42 @@ function Billing({ inventory, setInventory, sales, setSales }) {
           )}
         </Card>
 
+        {/* Right Card: Bill Summary */}
         <Card accentColor="#38bdf8">
-          <h3 style={{ marginBottom: '16px' }}>Bill Details</h3>
+          <h3 style={{ marginBottom: '16px' }}>Bill Summary</h3>
           <div className="dash-form">
-            <div className="billing-info-box">
-              Customer: Walk-in Customer
-            </div>
-
+            <div className="billing-info-box">Customer: Walk-in Customer</div>
+            
             <div style={{ display: 'flex', gap: '16px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Discount (%)</label>
-                <input className="dash-input" type="number" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>Discount (%)</label>
+                <input className="dash-input" type="number" value={discountPercent} onChange={e => setDiscountPercent(Number(e.target.value))} />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Tax (%)</label>
-                <input className="dash-input" type="number" value={tax} onChange={e => setTax(Number(e.target.value))} />
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>Tax (%)</label>
+                <input className="dash-input" type="number" value={taxPercent} onChange={e => setTaxPercent(Number(e.target.value))} />
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '16px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Payment Mode</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>Mode</label>
                 <select className="dash-input" value={paymentMode} onChange={e => setPaymentMode(e.target.value)}>
-                  <option>Cash</option>
-                  <option>Card</option>
-                  <option>UPI</option>
-                  <option>Bank Transfer</option>
+                  <option>Cash</option><option>Card</option><option>UPI</option>
                 </select>
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Amount Paid (₹)</label>
-                <input className="dash-input" type="number" placeholder={total.toString()} value={amountPaid} onChange={e => setAmountPaid(e.target.value)} />
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>Paid (₹)</label>
+                <input className="dash-input" type="number" placeholder={finalTotal.toFixed(0)} value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />
               </div>
             </div>
 
             <div className="total-display-box">
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                <span>Total:</span>
-                <span>₹{total.toFixed(2)}</span>
+                <span>Total:</span><span>₹{finalTotal.toFixed(2)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', color: due > 0 ? '#ef4444' : '#22c55e' }}>
-                <span>{due > 0 ? 'Due Amount:' : 'Status:'}</span>
-                <span>{due > 0 ? `₹${due.toFixed(2)}` : 'Paid'}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', color: finalDue > 0 ? '#ef4444' : '#22c55e' }}>
+                <span>{finalDue > 0 ? 'Due:' : 'Status:'}</span><span>{finalDue > 0 ? `₹${finalDue.toFixed(2)}` : 'Paid'}</span>
               </div>
             </div>
 
@@ -216,52 +220,31 @@ function Billing({ inventory, setInventory, sales, setSales }) {
         </Card>
       </div>
 
-      {previewBill && (
-        <div className="bill-preview print-area" style={{ marginTop: '24px', maxWidth: '400px', margin: '0 auto' }}>
+      {/* Bill Preview Modal */}
+      {billPreview && (
+        <div className="bill-preview print-area" style={{ marginTop: '24px', maxWidth: '400px', margin: '24px auto' }}>
           <Card accentColor="#111">
-            <h2 style={{ textAlign: 'center', marginBottom: '4px' }}>ArthSaathi</h2>
-            <p style={{ textAlign: 'center', marginBottom: '24px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Tax Invoice</p>
-            <div style={{ fontSize: '0.9rem', marginBottom: '16px' }}>
-              <p style={{ margin: '4px 0' }}><strong>Date:</strong> {new Date(previewBill.date).toLocaleString()}</p>
-              <p style={{ margin: '4px 0' }}><strong>Bill No:</strong> #{previewBill.id}</p>
-              <p style={{ margin: '4px 0' }}><strong>Status:</strong> {previewBill.status}</p>
+            <h2 style={{ textAlign: 'center' }}>Tax Invoice</h2>
+            <div style={{ fontSize: '0.9rem', margin: '16px 0' }}>
+              <p><strong>Date:</strong> {new Date(billPreview.date).toLocaleString()}</p>
+              <p><strong>Bill No:</strong> #{billPreview.id}</p>
             </div>
-            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px dashed var(--grid-color)' }} />
-            <table style={{ width: '100%', marginBottom: '16px', fontSize: '0.9rem' }}>
-              <thead>
-                <tr style={{ textAlign: 'left' }}>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
+            <table style={{ width: '100%', fontSize: '0.9rem' }}>
+              <thead><tr style={{ textAlign: 'left' }}><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
               <tbody>
-                {previewBill.items.map((it, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: '8px 0' }}>{it.name}</td>
-                    <td style={{ padding: '8px 0' }}>{it.qty}</td>
-                    <td style={{ padding: '8px 0' }}>₹{it.price * it.qty}</td>
-                  </tr>
+                {billPreview.items.map((it, i) => (
+                  <tr key={i}><td style={{ padding: '8px 0' }}>{it.name}</td><td>{it.qty}</td><td>₹{it.price}</td></tr>
                 ))}
               </tbody>
             </table>
             <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px dashed var(--grid-color)' }} />
-            <div style={{ fontSize: '0.9rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '12px' }}>
-                <span>Total:</span>
-                <span>₹{previewBill.total.toFixed(2)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                <span>Paid:</span>
-                <span>₹{previewBill.paid.toFixed(2)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', color: previewBill.due > 0 ? '#ef4444' : 'inherit' }}>
-                <span>Due:</span>
-                <span>₹{previewBill.due.toFixed(2)}</span>
-              </div>
+            <div style={{ fontWeight: 'bold' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Total:</span><span>₹{billPreview.total.toFixed(2)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}><span>Paid:</span><span>₹{billPreview.paid.toFixed(2)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', color: '#ef4444' }}><span>Due:</span><span>₹{billPreview.due.toFixed(2)}</span></div>
             </div>
             <button className="btn no-print" style={{ width: '100%', marginTop: '24px' }} onClick={() => window.print()}>Print Bill</button>
-            <button className="btn sidebar-btn no-print" style={{ width: '100%', marginTop: '12px', backgroundColor: '#e5e7eb', color: '#111', borderColor: '#d1d5db' }} onClick={() => setPreviewBill(null)}>Close</button>
+            <button className="btn sidebar-btn no-print" style={{ width: '100%', marginTop: '12px' }} onClick={() => setBillPreview(null)}>Close</button>
           </Card>
         </div>
       )}

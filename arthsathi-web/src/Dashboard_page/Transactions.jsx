@@ -2,69 +2,93 @@ import React, { useState } from 'react';
 import Card from './Card';
 
 function Transactions({ sales, setSales }) {
-  const [filterDate, setFilterDate] = useState('');
+  // State for filtering by date
+  const [dateFilter, setDateFilter] = useState('');
   
-  const [updatingSale, setUpdatingSale] = useState(null);
-  const [payAmount, setPayAmount] = useState('');
+  // State for updating a bill with more payment
+  const [saleToUpdate, setSaleToUpdate] = useState(null);
+  const [newPaymentAmount, setNewPaymentAmount] = useState('');
 
-  let filteredSales = (sales || []).filter(s => {
-    const matchesDate = filterDate ? (s.date && new Date(s.date).toISOString().split('T')[0] === filterDate) : true;
-    return matchesDate;
+  // 1. Filter the sales list based on the selected date
+  const filteredSales = sales.filter(sale => {
+    if (!dateFilter) return true; // show all if no date selected
+    
+    const saleDate = new Date(sale.date).toISOString().split('T')[0];
+    return saleDate === dateFilter;
   });
 
-  const handleUpdatePayment = (e) => {
+  // 2. Handle adding more payment to a "Due" bill
+  const updatePayment = (e) => {
     e.preventDefault();
-    if (!updatingSale || !payAmount) return;
+    if (!saleToUpdate || !newPaymentAmount) return;
 
-    const amount = Number(payAmount);
-    const newPaid = updatingSale.paid + amount;
-    const newDue = Math.max(0, updatingSale.due - amount);
+    const extraAmount = Number(newPaymentAmount);
+    const updatedPaid = saleToUpdate.paid + extraAmount;
+    const updatedDue = Math.max(0, saleToUpdate.due - extraAmount);
 
-    // Update Sales
-    setSales(sales.map(s => s.id === updatingSale.id ? { 
-      ...s, 
-      paid: newPaid, 
-      due: newDue, 
-      status: newDue === 0 ? 'Paid' : 'Due' 
-    } : s));
+    // Update the sales array
+    const updatedSalesList = sales.map(s => {
+      if (s.id === saleToUpdate.id) {
+        return { 
+          ...s, 
+          paid: updatedPaid, 
+          due: updatedDue, 
+          status: updatedDue === 0 ? 'Paid' : 'Due' 
+        };
+      }
+      return s;
+    });
 
-    setUpdatingSale(null);
-    setPayAmount('');
+    setSales(updatedSalesList);
+    
+    // Close the update form
+    setSaleToUpdate(null);
+    setNewPaymentAmount('');
   };
 
   return (
     <div className="dash-section">
-      {updatingSale && (
+      
+      {/* Show Update Form only if a bill is selected */}
+      {saleToUpdate && (
         <Card accentColor="#ef4444">
-          <h3 style={{ marginBottom: '16px' }}>Update Payment for Bill #{updatingSale.id}</h3>
-          <p style={{ marginBottom: '12px' }}>Remaining Due: <strong>₹{updatingSale.due.toFixed(2)}</strong></p>
-          <form className="dash-form" onSubmit={handleUpdatePayment}>
+          <h3 style={{ marginBottom: '16px' }}>Add Payment for Bill #{saleToUpdate.id}</h3>
+          <p style={{ marginBottom: '12px' }}>Current Due: <strong>₹{saleToUpdate.due.toFixed(2)}</strong></p>
+          <form className="dash-form" onSubmit={updatePayment}>
             <input 
               className="dash-input" 
               type="number" 
-              placeholder="Enter Payment Amount" 
-              value={payAmount} 
-              onChange={e => setPayAmount(e.target.value)} 
-              max={updatingSale.due}
+              placeholder="Amount to pay" 
+              value={newPaymentAmount} 
+              onChange={e => setNewPaymentAmount(e.target.value)} 
+              max={saleToUpdate.due}
               required 
             />
             <div style={{ display: 'flex', gap: '12px' }}>
               <button className="btn" type="submit">Update Bill</button>
-              <button className="btn sidebar-btn" type="button" onClick={() => setUpdatingSale(null)} style={{ backgroundColor: '#e5e7eb', color: '#111', borderColor: '#d1d5db' }}>Cancel</button>
+              <button className="btn sidebar-btn" type="button" onClick={() => setSaleToUpdate(null)} style={{ backgroundColor: '#e5e7eb', color: '#111' }}>Cancel</button>
             </div>
           </form>
         </Card>
       )}
 
+      {/* Main Table Card */}
       <Card accentColor="#38bdf8">
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h3 style={{ margin: 0 }}>Sales History</h3>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <input className="dash-input" type="date" style={{ width: '160px' }} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
-          </div>
+          {/* Date Filter Input */}
+          <input 
+            className="dash-input" 
+            type="date" 
+            style={{ width: '160px' }} 
+            value={dateFilter} 
+            onChange={e => setDateFilter(e.target.value)} 
+          />
         </div>
         
-        {filteredSales.length === 0 ? <p className="empty-state">No transactions found.</p> : (
+        {filteredSales.length === 0 ? (
+          <p className="empty-state">No sales found for this date.</p>
+        ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="dash-table">
               <thead>
@@ -78,16 +102,17 @@ function Transactions({ sales, setSales }) {
                 </tr>
               </thead>
               <tbody>
-                {filteredSales.slice().reverse().map(sale => (
-                  <tr key={sale.id} onClick={() => sale.due > 0 && setUpdatingSale(sale)} style={{ cursor: sale.due > 0 ? 'pointer' : 'default' }}>
-                    <td>{sale.date ? new Date(sale.date).toLocaleDateString() : '-'}</td>
+                {/* Reverse the list to show newest first */}
+                {[...filteredSales].reverse().map(sale => (
+                  <tr key={sale.id} onClick={() => sale.due > 0 && setSaleToUpdate(sale)} style={{ cursor: sale.due > 0 ? 'pointer' : 'default' }}>
+                    <td>{new Date(sale.date).toLocaleDateString()}</td>
                     <td>#{sale.id}</td>
-                    <td>₹{sale.total?.toFixed(2)}</td>
-                    <td style={{ color: '#22c55e' }}>₹{sale.paid?.toFixed(2)}</td>
-                    <td style={{ color: sale.due > 0 ? '#ef4444' : 'inherit' }}>₹{sale.due?.toFixed(2)}</td>
+                    <td>₹{sale.total.toFixed(2)}</td>
+                    <td style={{ color: '#22c55e' }}>₹{sale.paid.toFixed(2)}</td>
+                    <td style={{ color: sale.due > 0 ? '#ef4444' : 'inherit' }}>₹{sale.due.toFixed(2)}</td>
                     <td>
                       <span style={{ 
-                        padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold',
+                        padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold',
                         backgroundColor: sale.status === 'Paid' ? '#dcfce7' : '#fee2e2',
                         color: sale.status === 'Paid' ? '#166534' : '#991b1b'
                       }}>

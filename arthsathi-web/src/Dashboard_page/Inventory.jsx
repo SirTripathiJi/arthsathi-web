@@ -2,15 +2,24 @@ import React, { useState } from 'react';
 import Card from './Card';
 
 function Inventory({ inventory, setInventory }) {
-  const [form, setForm] = useState({ id: null, name: '', category: '', qty: '', costPrice: '', sellPrice: '', expiry: '' });
+  // Simple state for the product form
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [qty, setQty] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [costPrice, setCostPrice] = useState('');
+  const [sellPrice, setSellPrice] = useState('');
+  
+  // Track if we are editing an existing item
+  const [editId, setEditId] = useState(null);
+
+  // Simple state for search
   const [searchTerm, setSearchTerm] = useState('');
 
-  const LOW_STOCK_LIMIT = 5;
-
-  const getStatus = (item) => {
-    const isLowStock = (item.qty || 0) <= LOW_STOCK_LIMIT;
+  // Function to calculate if an item is low stock or expired
+  const getProductStatus = (item) => {
+    const isLowStock = item.qty <= 5;
     let expiryStatus = "Safe";
-    let daysLeft = null;
 
     if (item.expiry) {
       const today = new Date();
@@ -19,51 +28,79 @@ function Inventory({ inventory, setInventory }) {
       expDate.setHours(0, 0, 0, 0);
       
       const diffTime = expDate.getTime() - today.getTime();
-      daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
       if (daysLeft < 0) expiryStatus = "Expired";
       else if (daysLeft <= 7) expiryStatus = "Near Expiry";
     }
 
-    return { isLowStock, expiryStatus, daysLeft };
+    return { isLowStock, expiryStatus };
   };
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSave = (e) => {
+  // Save or Update product
+  const handleSaveProduct = (e) => {
     e.preventDefault();
-    if (form.id) {
-      setInventory(inventory.map(item => item.id === form.id ? { ...item, ...form, qty: Number(form.qty), costPrice: Number(form.costPrice), sellPrice: Number(form.sellPrice) } : item));
+
+    const productData = {
+      id: editId || Date.now(),
+      name,
+      category,
+      qty: Number(qty),
+      costPrice: Number(costPrice),
+      sellPrice: Number(sellPrice),
+      expiry
+    };
+
+    if (editId) {
+      // Update existing
+      const updatedList = inventory.map(item => item.id === editId ? productData : item);
+      setInventory(updatedList);
     } else {
-      setInventory([...inventory, {
-        id: Date.now(),
-        name: form.name,
-        category: form.category,
-        qty: Number(form.qty),
-        costPrice: Number(form.costPrice),
-        sellPrice: Number(form.sellPrice),
-        expiry: form.expiry
-      }]);
+      // Add new
+      setInventory([...inventory, productData]);
     }
-    setForm({ id: null, name: '', category: '', qty: '', costPrice: '', sellPrice: '', expiry: '' });
+
+    // Reset form
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setName('');
+    setCategory('');
+    setQty('');
+    setExpiry('');
+    setCostPrice('');
+    setSellPrice('');
+    setEditId(null);
   };
 
   const handleEdit = (item) => {
-    setForm({ ...item, qty: item.qty.toString(), costPrice: item.costPrice.toString(), sellPrice: item.sellPrice.toString() });
+    setEditId(item.id);
+    setName(item.name);
+    setCategory(item.category);
+    setQty(item.qty);
+    setExpiry(item.expiry);
+    setCostPrice(item.costPrice);
+    setSellPrice(item.sellPrice);
   };
 
-  const handleDelete = (id) => setInventory(inventory.filter(i => i.id !== id));
+  const handleDelete = (id) => {
+    const remaining = inventory.filter(item => item.id !== id);
+    setInventory(remaining);
+  };
 
-  // Filtering by search term
-  const filteredInventory = (inventory || []).filter(item => {
+  // Filter list based on search term
+  const filteredList = inventory.filter(item => {
     const term = searchTerm.toLowerCase();
-    return (item.name || '').toLowerCase().includes(term) || (item.category || '').toLowerCase().includes(term);
+    const nameMatch = item.name.toLowerCase().includes(term);
+    const catMatch = item.category.toLowerCase().includes(term);
+    return nameMatch || catMatch;
   });
 
-  // Sorting: Expired first → Near Expiry → Low Stock → Others
-  const sortedInventory = filteredInventory.sort((a, b) => {
-    const statusA = getStatus(a);
-    const statusB = getStatus(b);
+  // Sort list: Expired > Near Expiry > Low Stock
+  const sortedList = [...filteredList].sort((a, b) => {
+    const statusA = getProductStatus(a);
+    const statusB = getProductStatus(b);
 
     const getRank = (s) => {
       if (s.expiryStatus === "Expired") return 1;
@@ -77,24 +114,32 @@ function Inventory({ inventory, setInventory }) {
 
   return (
     <div className="dash-section">
+      {/* Form Card */}
       <Card accentColor="#38bdf8">
-        <h3 style={{ marginBottom: '16px' }}>{form.id ? 'Edit Product' : 'Add Product'}</h3>
-        <form className="dash-form" onSubmit={handleSave}>
+        <h3 style={{ marginBottom: '16px' }}>{editId ? 'Edit Product' : 'Add Product'}</h3>
+        <form className="dash-form" onSubmit={handleSaveProduct}>
           <div className="grid-2col">
-            <input className="dash-input" name="name" type="text" placeholder="Product Name" value={form.name} onChange={handleChange} required />
-            <input className="dash-input" name="category" type="text" placeholder="Category" value={form.category} onChange={handleChange} required />
-            <input className="dash-input" name="qty" type="number" placeholder="Quantity" value={form.qty} onChange={handleChange} required />
-            <input className="dash-input" name="expiry" type="date" value={form.expiry} onChange={handleChange} />
-            <input className="dash-input" name="costPrice" type="number" placeholder="Cost Price (₹)" value={form.costPrice} onChange={handleChange} required />
-            <input className="dash-input" name="sellPrice" type="number" placeholder="Selling Price (₹)" value={form.sellPrice} onChange={handleChange} required />
+            <input className="dash-input" placeholder="Product Name" value={name} onChange={e => setName(e.target.value)} required />
+            <input className="dash-input" placeholder="Category" value={category} onChange={e => setCategory(e.target.value)} required />
+            <input className="dash-input" type="number" placeholder="Quantity" value={qty} onChange={e => setQty(e.target.value)} required />
+            <input className="dash-input" type="date" value={expiry} onChange={e => setExpiry(e.target.value)} />
+            <input className="dash-input" type="number" placeholder="Cost Price (₹)" value={costPrice} onChange={e => setCostPrice(e.target.value)} required />
+            <input className="dash-input" type="number" placeholder="Selling Price (₹)" value={sellPrice} onChange={e => setSellPrice(e.target.value)} required />
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="btn" type="submit" style={{ maxWidth: '200px' }}>{form.id ? 'Save Changes' : 'Add Product'}</button>
-            {form.id && <button className="btn sidebar-btn" type="button" onClick={() => setForm({ id: null, name: '', category: '', qty: '', costPrice: '', sellPrice: '', expiry: '' })} style={{ maxWidth: '200px', backgroundColor: '#e5e7eb', color: '#111', borderColor: '#d1d5db' }}>Cancel</button>}
+            <button className="btn" type="submit" style={{ maxWidth: '200px' }}>
+              {editId ? 'Save Changes' : 'Add Product'}
+            </button>
+            {editId && (
+              <button className="btn sidebar-btn" type="button" onClick={resetForm} style={{ maxWidth: '200px', backgroundColor: '#e5e7eb', color: '#111', borderColor: '#d1d5db' }}>
+                Cancel
+              </button>
+            )}
           </div>
         </form>
       </Card>
       
+      {/* Table Card */}
       <Card accentColor="#fb7185">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
           <h3 style={{ margin: 0 }}>Current Stock</h3>
@@ -108,7 +153,9 @@ function Inventory({ inventory, setInventory }) {
           />
         </div>
         
-        {sortedInventory.length === 0 ? <p className="empty-state">No products found. {inventory.length === 0 ? 'Add your first product above to get started.' : 'Try a different search term.'}</p> : (
+        {sortedList.length === 0 ? (
+          <p className="empty-state">No products found.</p>
+        ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="dash-table">
               <thead>
@@ -123,15 +170,15 @@ function Inventory({ inventory, setInventory }) {
                 </tr>
               </thead>
               <tbody>
-                {sortedInventory.map(item => {
-                  const { isLowStock, expiryStatus } = getStatus(item);
+                {sortedList.map(item => {
+                  const { isLowStock, expiryStatus } = getProductStatus(item);
                   
                   return (
                     <tr key={item.id}>
-                      <td>{item.name || 'Unnamed'}</td>
-                      <td>{item.category || 'General'}</td>
-                      <td>{item.qty || 0}</td>
-                      <td>₹{item.sellPrice || 0}</td>
+                      <td>{item.name}</td>
+                      <td>{item.category}</td>
+                      <td>{item.qty}</td>
+                      <td>₹{item.sellPrice}</td>
                       <td>{item.expiry || '-'}</td>
                       <td>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -156,4 +203,5 @@ function Inventory({ inventory, setInventory }) {
     </div>
   );
 }
+
 export default Inventory;

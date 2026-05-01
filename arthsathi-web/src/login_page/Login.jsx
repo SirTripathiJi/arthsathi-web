@@ -4,42 +4,48 @@ import AuthLayout from './AuthLayout';
 import './Login.css';
 
 function Login() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
-    username: '',
-    shopName: '',
-    email: '',
-    password: ''
-  });
+  // Toggle between Login and Sign Up views
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  
+  // Input states
+  const [fullName, setFullName] = useState('');
+  const [shopName, setShopName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
+  const handleAuth = (e) => {
     e.preventDefault();
+
+    // Get list of all registered users
     const users = JSON.parse(localStorage.getItem("users")) || [];
 
-    if (isLogin) {
-      // Login Logic
-      const user = users.find(u => u.email === formData.email && u.password === formData.password);
-      if (user) {
-        localStorage.setItem("authUser", JSON.stringify(user));
+    if (isLoginMode) {
+      // 1. LOGIN LOGIC
+      const foundUser = users.find(u => u.email === email && u.password === password);
+      
+      if (foundUser) {
+        // Save current user session
+        localStorage.setItem("authUser", JSON.stringify(foundUser));
         navigate('/dashboard');
       } else {
-        alert("Invalid credentials");
+        alert("Invalid email or password!");
       }
     } else {
-      // Signup Logic
+      // 2. SIGN UP LOGIC
       const newUser = {
-        username: formData.username,
-        shopName: formData.shopName,
-        email: formData.email,
-        password: formData.password
+        username: fullName,
+        shopName: shopName,
+        email: email,
+        password: password
       };
+
+      // Add new user to the list
       users.push(newUser);
       localStorage.setItem("users", JSON.stringify(users));
+      
+      // Log them in immediately
       localStorage.setItem("authUser", JSON.stringify(newUser));
       navigate('/dashboard');
     }
@@ -49,81 +55,55 @@ function Login() {
     <AuthLayout>
       <div className="auth-card">
         <div className="auth-header">
-          <h2>{isLogin ? "Welcome back" : "Create account"}</h2>
+          <h2>{isLoginMode ? "Welcome back" : "Create account"}</h2>
         </div>
         
+        {/* Toggle Tabs */}
         <div className="auth-tabs">
           <button 
             type="button"
-            className={`tab-btn ${isLogin ? 'active' : ''}`} 
-            onClick={() => setIsLogin(true)}
+            className={`tab-btn ${isLoginMode ? 'active' : ''}`} 
+            onClick={() => setIsLoginMode(true)}
           >
             Login
           </button>
           <button 
             type="button"
-            className={`tab-btn ${!isLogin ? 'active' : ''}`} 
-            onClick={() => setIsLogin(false)}
+            className={`tab-btn ${!isLoginMode ? 'active' : ''}`} 
+            onClick={() => setIsLoginMode(false)}
           >
             Sign Up
           </button>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {!isLogin && (
+        {/* Auth Form */}
+        <form className="auth-form" onSubmit={handleAuth}>
+          {!isLoginMode && (
             <>
               <div className="input-group">
-                <input 
-                  type="text" 
-                  name="username" 
-                  placeholder="Full Name" 
-                  value={formData.username} 
-                  onChange={handleChange} 
-                  required 
-                />
+                <input type="text" placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} required />
               </div>
               <div className="input-group">
-                <input 
-                  type="text" 
-                  name="shopName" 
-                  placeholder="Store Name" 
-                  value={formData.shopName} 
-                  onChange={handleChange} 
-                  required 
-                />
+                <input type="text" placeholder="Store Name" value={shopName} onChange={e => setShopName(e.target.value)} required />
               </div>
             </>
           )}
           <div className="input-group">
-            <input 
-              type="email" 
-              name="email" 
-              placeholder="Email Address" 
-              value={formData.email} 
-              onChange={handleChange} 
-              required 
-            />
+            <input type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} required />
           </div>
           <div className="input-group">
-            <input 
-              type="password" 
-              name="password" 
-              placeholder="Password" 
-              value={formData.password} 
-              onChange={handleChange} 
-              required 
-            />
+            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
           <button type="submit" className="auth-btn">
-            {isLogin ? "Login" : "Create Account"}
+            {isLoginMode ? "Login" : "Create Account"}
           </button>
         </form>
 
         <div className="auth-footer">
-          {isLogin ? (
-            <p>Don't have an account? <span onClick={() => setIsLogin(false)}>Sign up</span></p>
+          {isLoginMode ? (
+            <p>Don't have an account? <span onClick={() => setIsLoginMode(false)}>Sign up</span></p>
           ) : (
-            <p>Already have an account? <span onClick={() => setIsLogin(true)}>Login</span></p>
+            <p>Already have an account? <span onClick={() => setIsLoginMode(true)}>Login</span></p>
           )}
         </div>
       </div>

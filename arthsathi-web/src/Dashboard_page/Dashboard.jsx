@@ -10,57 +10,66 @@ import Insights from './Insights';
 import Settings from './Settings';
 import './Dashboard.css';
 
+// Import local storage helpers
+import { getData, saveData } from '../utils/storage';
+
 function Dashboard() {
   const navigate = useNavigate();
   const [isAuth, setIsAuth] = useState(false);
 
+  // Check if user is logged in on page load
   useEffect(() => {
     const user = localStorage.getItem("authUser");
     if (!user) {
+      // if no user, send to login page
       navigate('/login');
     } else {
+      // if user exists, show dashboard
       setIsAuth(true);
     }
 
-    // Initialize Dark Mode
+    // Load Dark Mode preference
     const isDark = localStorage.getItem("darkMode") === "true";
     if (isDark) {
       document.body.classList.add("dark");
     }
 
+    // Cleanup: remove dark mode when leaving dashboard
     return () => {
-      // Clean up dark mode when leaving dashboard if you want it strictly dashboard only
-      // but usually users want it to persist. The requirement says "Only for dashboard",
-      // so we should remove it when unmounting.
       document.body.classList.remove("dark");
     };
   }, [navigate]);
 
-  const validTabs = ['Overview', 'Inventory', 'Billing', 'Transactions', 'Insights', 'Settings'];
+  // Main state for the app
   const [activeTab, setActiveTab] = useState(() => {
     const saved = localStorage.getItem('arth_tab');
-    return validTabs.includes(saved) ? saved : 'Overview';
-  });
-  const [inventory, setInventory] = useState(() => {
-    try { const val = JSON.parse(localStorage.getItem('arth_inv')); return Array.isArray(val) ? val : []; } catch { return []; }
-  });
-  const [sales, setSales] = useState(() => {
-    try { const val = JSON.parse(localStorage.getItem('arth_sales')); return Array.isArray(val) ? val : []; } catch { return []; }
+    return saved || 'Overview';
   });
 
+  // Load inventory and sales from storage
+  const [inventory, setInventory] = useState(() => getData('arth_inv'));
+  const [sales, setSales] = useState(() => getData('arth_sales'));
+
+  // Save data whenever it changes
   useEffect(() => {
     localStorage.setItem('arth_tab', activeTab);
-    localStorage.setItem('arth_inv', JSON.stringify(inventory));
-    localStorage.setItem('arth_sales', JSON.stringify(sales));
+    saveData('arth_inv', inventory);
+    saveData('arth_sales', sales);
   }, [activeTab, inventory, sales]);
 
+  // Don't render anything if not authenticated
   if (!isAuth) return null;
 
   return (
     <div className="dashboard-layout">
+      {/* Sidebar for navigation */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      
       <main className="dashboard-main">
+        {/* Topbar shows current title and theme toggle */}
         <Topbar activeTab={activeTab} />
+
+        {/* Dynamic content based on selected tab */}
         {activeTab === 'Overview' && <Overview inventory={inventory} sales={sales} />}
         {activeTab === 'Inventory' && <Inventory inventory={inventory} setInventory={setInventory} />}
         {activeTab === 'Billing' && <Billing inventory={inventory} setInventory={setInventory} sales={sales} setSales={setSales} />}
@@ -71,4 +80,5 @@ function Dashboard() {
     </div>
   );
 }
+
 export default Dashboard;
