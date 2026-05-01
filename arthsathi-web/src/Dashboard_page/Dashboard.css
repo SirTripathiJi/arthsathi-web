@@ -32,10 +32,11 @@
 }
 
 .sidebar-nav li {
-  padding: 12px 16px;
+  padding: 14px 16px;
   margin-bottom: 8px;
   border-radius: 8px;
   cursor: pointer;
+  font-size: 1.05rem;
   font-weight: 500;
   color: var(--text-secondary);
   transition: background-color 0.2s, color 0.2s;
@@ -70,7 +71,7 @@
 .shop-info p {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .sidebar-btn {
@@ -79,24 +80,24 @@
 
 .dashboard-main {
   flex: 1;
-  padding: 40px;
+  padding: 48px;
   overflow-y: auto;
 }
 
 .dashboard-header {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .dashboard-header h1 {
   margin-top: 0;
-  margin-bottom: 8px;
-  font-size: 2rem;
+  margin-bottom: 12px;
+  font-size: 2.25rem;
 }
 
 .dashboard-header p {
   color: var(--text-secondary);
   margin-bottom: 0;
-  font-size: 1.125rem;
+  font-size: 1.15rem;
 }
 
 .dash-card {
@@ -107,6 +108,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .card-accent {
@@ -115,25 +117,27 @@
 }
 
 .card-content {
-  padding: 20px;
+  padding: 24px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 24px;
 }
 
 .stat-item h4 {
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: var(--text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   margin-top: 0;
 }
 
 .stat-item .stat-value {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
@@ -141,45 +145,50 @@
 
 .dash-section h2 {
   font-size: 1.75rem;
+  margin-bottom: 24px;
 }
 
 .grid-2col {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 24px;
 }
 
 .dash-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  flex: 1;
 }
 
 .dash-input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 16px;
   border: var(--border-width) solid var(--border-color);
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-family: inherit;
   outline: none;
+  background-color: #fafafa;
 }
 
 .dash-input:focus {
+  background-color: #ffffff;
   box-shadow: 2px 2px 0px 0px #111111;
 }
 
 .dash-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 .dash-table th, .dash-table td {
   text-align: left;
-  padding: 12px;
+  padding: 16px 12px;
   border-bottom: 1px solid rgba(17, 17, 17, 0.1);
   white-space: nowrap;
+  font-size: 1.05rem;
 }
 
 .dash-table th {
@@ -194,11 +203,11 @@
 .badge-low {
   background-color: #ef4444;
   color: white;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: bold;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
-  margin-left: 8px;
+  margin-left: 12px;
 }
 
 .text-btn {
@@ -208,11 +217,16 @@
   font-weight: 600;
   text-decoration: underline;
   padding: 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .text-btn.danger {
   color: #ef4444;
+}
+
+.text-btn.edit {
+  color: #38bdf8;
+  margin-right: 12px;
 }
 
 .status-active {
@@ -223,6 +237,13 @@
 .status-inactive {
   color: #9ca3af;
   font-weight: bold;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
 }
 
 @media print {
@@ -244,8 +265,11 @@
 }
 
 @media (max-width: 1024px) {
-  .stats-grid, .grid-2col {
+  .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .grid-2col {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -257,7 +281,7 @@
     width: 100%;
     border-right: none;
     border-bottom: var(--border-width) solid var(--border-color);
-    padding: 16px;
+    padding: 20px;
   }
   .sidebar-nav ul {
     display: flex;
@@ -266,6 +290,7 @@
   }
   .sidebar-nav li {
     margin-bottom: 0;
+    padding: 10px 14px;
   }
   .sidebar-bottom {
     margin-top: 24px;
@@ -277,7 +302,7 @@
 }
 
 @media (max-width: 640px) {
-  .stats-grid, .grid-2col {
+  .stats-grid {
     grid-template-columns: 1fr;
   }
 }

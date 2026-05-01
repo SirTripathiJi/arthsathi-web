@@ -8,8 +8,9 @@ function Customers({ customers, setCustomers }) {
     <div className="dash-section">
       <Card accentColor="#22c55e">
         <h3 style={{ marginBottom: '16px' }}>Customer List</h3>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="dash-table">
+        {(!customers || customers.length === 0) ? <p className="empty-state">No customers recorded yet. Customers will automatically appear here when you generate a bill.</p> : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="dash-table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -39,6 +40,7 @@ function Customers({ customers, setCustomers }) {
             </tbody>
           </table>
         </div>
+        )}
       </Card>
     </div>
   );
